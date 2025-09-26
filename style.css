@@ -1,132 +1,112 @@
 body {
-  margin: 0;
   font-family: Arial, sans-serif;
-  background-color: #2f2f2f;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
+  margin: 0;
+  background: #2f2f2f;
+  color: #333;
 }
 
-/* Header */
 header {
-  width: 100%;
-  background-color: #4361a8;
+  background: #3a5a9a;
   color: white;
   padding: 15px;
   text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
 }
 
-header .logo {
-  width: 40px;
-  height: 40px;
-}
-
-header h1 {
-  margin: 0;
-  font-size: 28px;
-}
-
-/* Main Container */
 main {
-  flex: 1;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  width: 100%;
+  flex-direction: column;
+  align-items: center;
   padding: 20px;
 }
 
-.container {
+.budget-card {
   background: white;
   padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  max-width: 650px;
-  width: 100%;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
   margin-top: 20px;
-}
-
-/* Inputs & Buttons */
-input {
-  margin: 5px 0;
-  padding: 10px;
-  width: calc(100% - 20px);
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 button {
-  background-color: #006d6d;
+  background: teal;
   color: white;
   border: none;
-  padding: 10px 15px;
-  border-radius: 8px;
-  cursor: pointer;
+  padding: 8px 12px;
   margin-top: 10px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 button:hover {
-  background-color: #004c4c;
+  opacity: 0.9;
 }
 
-/* Lists */
-ul {
+#saved-budgets {
+  margin-top: 20px;
+  width: 90%;
+  max-width: 500px;
+}
+
+#saved-budgets ul {
   list-style: none;
   padding: 0;
 }
 
-#items-list li {
-  padding: 8px;
-  border-bottom: 1px solid #ddd;
+#saved-budgets li {
+  background: #f9f9f9;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 4px;
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
-  gap: 15px;
 }
 
-#items-list li span.date {
-  color: #666;
-  font-size: 14px;
-  min-width: 90px;
+#saved-budgets button {
+  background: crimson;
+  padding: 4px 8px;
 }
 
-#items-list li span.name {
-  flex: 1;
+.hidden {
+  display: none;
 }
 
-#items-list li span.amount {
-  font-weight: bold;
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Saved Budgets List */
-#budget-list li {
-  padding: 8px;
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+}
+
+.close {
+  float: right;
   cursor: pointer;
-  border-bottom: 1px solid #ddd;
+  font-size: 20px;
 }
 
-#budget-list li:hover {
-  background-color: #f0f0f0;
-  color: #006d6d;
-  font-weight: bold;
+/* Budget status colors */
+.remaining-normal {
+  color: green;
 }
 
-/* Status Colors */
-.status-normal {
-  color: #006d6d;
+.remaining-warning {
+  color: darkorange;
 }
 
-.status-warning {
-  color: #d68b00; /* amber/dark yellow */
-  font-weight: bold;
-}
-
-.status-danger {
+.remaining-danger {
   color: red;
-  font-weight: bold;
 }
