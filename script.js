@@ -1,143 +1,173 @@
-const startBtn = document.getElementById("startBudgetBtn");
-const budgetAmount = document.getElementById("budgetAmount");
-const budgetTitle = document.getElementById("budgetTitle");
-const totalBudget = document.getElementById("totalBudget");
-const remainingBudget = document.getElementById("remainingBudget");
-const budgetDetails = document.getElementById("budgetDetails");
-const itemName = document.getElementById("itemName");
-const itemPrice = document.getElementById("itemPrice");
-const itemDate = document.getElementById("itemDate");
-const addItemBtn = document.getElementById("addItemBtn");
-const itemList = document.getElementById("itemList");
-const saveBudgetBtn = document.getElementById("saveBudgetBtn");
-const savedBudgetsList = document.getElementById("savedBudgetsList");
+document.addEventListener("DOMContentLoaded", () => {
+  const startBudgetBtn = document.getElementById("startBudgetBtn");
+  const addItemBtn = document.getElementById("addItemBtn");
+  const saveBudgetBtn = document.getElementById("saveBudgetBtn");
 
-// Modal
-const budgetModal = document.getElementById("budgetModal");
-const closeModal = document.getElementById("closeModal");
-const modalTitle = document.getElementById("modalTitle");
-const modalTotal = document.getElementById("modalTotal");
-const modalRemaining = document.getElementById("modalRemaining");
-const modalItems = document.getElementById("modalItems");
+  const budgetTitleInput = document.getElementById("budgetTitle");
+  const budgetAmountInput = document.getElementById("budgetAmount");
 
-let budget = {
-  title: "",
-  total: 0,
-  remaining: 0,
-  items: []
-};
+  const budgetDetails = document.getElementById("budgetDetails");
+  const totalBudgetEl = document.getElementById("totalBudget");
+  const remainingBudgetEl = document.getElementById("remainingBudget");
+  const itemDateInput = document.getElementById("itemDate");
+  const itemNameInput = document.getElementById("itemName");
+  const itemPriceInput = document.getElementById("itemPrice");
+  const itemList = document.getElementById("itemList");
 
-startBtn.addEventListener("click", () => {
-  const title = budgetTitle.value.trim();
-  const amount = parseFloat(budgetAmount.value);
+  const savedBudgetsList = document.getElementById("savedBudgetsList");
 
-  if (title && amount > 0) {
-    budget = { title, total: amount, remaining: amount, items: [] };
-    totalBudget.textContent = amount.toFixed(2);
-    updateRemaining();
+  const modal = document.getElementById("budgetModal");
+  const closeModal = document.getElementById("closeModal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalTotal = document.getElementById("modalTotal");
+  const modalRemaining = document.getElementById("modalRemaining");
+  const modalItems = document.getElementById("modalItems");
+
+  let currentBudget = null;
+  let budgets = JSON.parse(localStorage.getItem("budgets")) || [];
+
+  // --- Start Budget ---
+  startBudgetBtn.addEventListener("click", () => {
+    const title = budgetTitleInput.value.trim();
+    const totalAmount = parseFloat(budgetAmountInput.value);
+
+    if (!title || isNaN(totalAmount) || totalAmount <= 0) {
+      alert("Enter a valid title and amount");
+      return;
+    }
+
+    currentBudget = {
+      title,
+      total: totalAmount,
+      remaining: totalAmount,
+      items: []
+    };
+
     budgetDetails.classList.remove("hidden");
-  }
-});
-
-addItemBtn.addEventListener("click", () => {
-  const name = itemName.value.trim();
-  const price = parseFloat(itemPrice.value);
-  const date = itemDate.value;
-
-  if (name && price > 0 && date) {
-    budget.items.push({ date, name, price });
-    budget.remaining -= price;
-
-    renderItems();
-    updateRemaining();
-
-    itemName.value = "";
-    itemPrice.value = "";
-    itemDate.value = "";
-  }
-});
-
-function renderItems() {
-  itemList.innerHTML = "";
-  budget.items.forEach(i => {
-    const li = document.createElement("li");
-    li.textContent = `${i.date} | ${i.name} | ₦${i.price.toFixed(2)}`;
-    itemList.appendChild(li);
+    updateBudgetDisplay();
   });
-}
 
-function updateRemaining() {
-  remainingBudget.textContent = budget.remaining.toFixed(2);
+  // --- Add Item ---
+  addItemBtn.addEventListener("click", () => {
+    if (!currentBudget) return;
 
-  remainingBudget.classList.remove("remaining-normal", "remaining-warning", "remaining-danger");
+    const date = itemDateInput.value;
+    const name = itemNameInput.value.trim();
+    const price = parseFloat(itemPriceInput.value);
 
-  if (budget.remaining <= 0) {
-    remainingBudget.classList.add("remaining-danger");
-  } else if (budget.remaining <= budget.total * 0.1) {
-    remainingBudget.classList.add("remaining-warning");
-  } else {
-    remainingBudget.classList.add("remaining-normal");
+    if (!date || !name || isNaN(price) || price <= 0) {
+      alert("Fill all fields correctly");
+      return;
+    }
+
+    currentBudget.items.push({ date, name, price });
+    currentBudget.remaining -= price;
+
+    updateBudgetDisplay();
+
+    // Reset inputs
+    itemDateInput.value = "";
+    itemNameInput.value = "";
+    itemPriceInput.value = "";
+  });
+
+  // --- Save Budget ---
+  saveBudgetBtn.addEventListener("click", () => {
+    if (!currentBudget) return;
+
+    budgets.push(currentBudget);
+    localStorage.setItem("budgets", JSON.stringify(budgets));
+
+    renderSavedBudgets();
+    budgetDetails.classList.add("hidden");
+    budgetTitleInput.value = "";
+    budgetAmountInput.value = "";
+    currentBudget = null;
+    itemList.innerHTML = "";
+    alert("Budget saved!");
+  });
+
+  // --- Update Display ---
+  function updateBudgetDisplay() {
+    if (!currentBudget) return;
+
+    totalBudgetEl.textContent = currentBudget.total.toFixed(2);
+    remainingBudgetEl.textContent = currentBudget.remaining.toFixed(2);
+
+    // Color logic
+    const percentageRemaining = (currentBudget.remaining / currentBudget.total) * 100;
+    remainingBudgetEl.classList.remove("remaining-normal", "remaining-warning", "remaining-danger");
+
+    if (currentBudget.remaining < 0) {
+      remainingBudgetEl.classList.add("remaining-danger");
+    } else if (percentageRemaining <= 10) {
+      remainingBudgetEl.classList.add("remaining-warning");
+    } else {
+      remainingBudgetEl.classList.add("remaining-normal");
+    }
+
+    // Item list
+    itemList.innerHTML = "";
+    currentBudget.items.forEach((item) => {
+      const li = document.createElement("li");
+      li.textContent = `${item.date} - ${item.name}: ₦${item.price.toFixed(2)}`;
+      itemList.appendChild(li);
+    });
   }
-}
 
-saveBudgetBtn.addEventListener("click", () => {
-  const budgets = JSON.parse(localStorage.getItem("budgets")) || [];
-  budgets.push(budget);
-  localStorage.setItem("budgets", JSON.stringify(budgets));
-  loadSavedBudgets();
-  alert("Budget saved!");
-});
+  // --- Render Saved Budgets ---
+  function renderSavedBudgets() {
+    savedBudgetsList.innerHTML = "";
 
-function loadSavedBudgets() {
-  savedBudgetsList.innerHTML = "";
-  const budgets = JSON.parse(localStorage.getItem("budgets")) || [];
+    budgets.forEach((budget, index) => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <span>${budget.title} - ₦${budget.total.toFixed(2)}</span>
+        <div>
+          <button class="viewBtn">View</button>
+          <button class="deleteBtn">Delete</button>
+        </div>
+      `;
 
-  budgets.forEach((b, index) => {
-    const li = document.createElement("li");
+      // View button
+      li.querySelector(".viewBtn").addEventListener("click", () => {
+        openBudgetModal(budget);
+      });
 
-    const text = document.createElement("span");
-    text.textContent = `${b.title} - ₦${b.total.toFixed(2)}`;
+      // Delete button
+      li.querySelector(".deleteBtn").addEventListener("click", () => {
+        if (confirm("Are you sure you want to delete this budget?")) {
+          budgets.splice(index, 1);
+          localStorage.setItem("budgets", JSON.stringify(budgets));
+          renderSavedBudgets();
+        }
+      });
 
-    const viewBtn = document.createElement("button");
-    viewBtn.textContent = "View";
-    viewBtn.style.background = "teal";
-    viewBtn.addEventListener("click", () => {
-      openModal(b);
+      savedBudgetsList.appendChild(li);
+    });
+  }
+
+  // --- Open Modal ---
+  function openBudgetModal(budget) {
+    modalTitle.textContent = budget.title;
+    modalTotal.textContent = budget.total.toFixed(2);
+    modalRemaining.textContent = budget.remaining.toFixed(2);
+
+    modalItems.innerHTML = "";
+    budget.items.forEach((item) => {
+      const li = document.createElement("li");
+      li.textContent = `${item.date} - ${item.name}: ₦${item.price.toFixed(2)}`;
+      modalItems.appendChild(li);
     });
 
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "Delete";
-    delBtn.addEventListener("click", () => {
-      if (confirm(`Delete budget "${b.title}"?`)) {
-        budgets.splice(index, 1);
-        localStorage.setItem("budgets", JSON.stringify(budgets));
-        loadSavedBudgets();
-      }
-    });
+    modal.classList.remove("hidden");
+  }
 
-    li.appendChild(text);
-    li.appendChild(viewBtn);
-    li.appendChild(delBtn);
-    savedBudgetsList.appendChild(li);
+  // --- Close Modal ---
+  closeModal.addEventListener("click", () => {
+    modal.classList.add("hidden");
   });
-}
 
-function openModal(b) {
-  modalTitle.textContent = b.title;
-  modalTotal.textContent = b.total.toFixed(2);
-  modalRemaining.textContent = b.remaining.toFixed(2);
-  modalItems.innerHTML = "";
-  b.items.forEach(i => {
-    const li = document.createElement("li");
-    li.textContent = `${i.date} | ${i.name} | ₦${i.price.toFixed(2)}`;
-    modalItems.appendChild(li);
-  });
-  budgetModal.classList.remove("hidden");
-}
-
-closeModal.addEventListener("click", () => {
-  budgetModal.classList.add("hidden");
+  // Initialize
+  renderSavedBudgets();
 });
-
-// Load saved budgets on startup
-loadSavedBudgets();
