@@ -1,40 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BudgetIT</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <header class="app-header">
-    <img src="icon-512.png" alt="BudgetIT Logo" class="logo">
+  <header>
+    <img src="icon-512.png" alt="Logo" class="logo">
     <h1>BudgetIT</h1>
   </header>
 
-  <div class="app-container">
-    <div class="budget-card">
-      <input type="text" id="new-budget-title" placeholder="Enter budget title" />
-      <button onclick="startBudget()">Start Budget</button>
+  <main>
+    <div class="card">
+      <label for="budget-title">Budget Title:</label>
+      <input type="text" id="budget-title" placeholder="e.g. Household Budget">
 
-      <h2 id="budget-title">New Budget</h2>
+      <label for="total-budget">Total Budget (₦):</label>
+      <input type="number" id="total-budget" placeholder="Enter total budget">
 
-      <div class="item-inputs">
-        <input type="date" id="item-date" />
-        <input type="text" id="item-name" placeholder="Item name" />
-        <input type="number" id="item-price" placeholder="Price" />
-        <button onclick="addItem()">Add Item</button>
+      <div class="budget-actions">
+        <button id="start-budget">Start Budget</button>
+        <button id="save-budget">Save Budget</button>
       </div>
 
+      <p>Total: ₦<span id="total">0.00</span></p>
+      <p>Remaining: <span id="remaining">₦0.00</span></p>
+
+      <label for="item-date">Item Date:</label>
+      <input type="date" id="item-date">
+
+      <label for="item-name">Item Name:</label>
+      <input type="text" id="item-name" placeholder="Enter item name">
+
+      <label for="item-price">Item Price (₦):</label>
+      <input type="number" id="item-price" placeholder="Enter price">
+
+      <button id="add-item">Add Item</button>
+
       <ul id="item-list"></ul>
-      <p><strong>Total:</strong> ₦<span id="total">0</span></p>
     </div>
 
-    <div class="history-card">
-      <h3>Saved Budgets</h3>
-      <ul id="budget-history"></ul>
+    <div class="card">
+      <h2>Saved Budgets</h2>
+      <ul id="saved-budgets"></ul>
     </div>
-  </div>
+  </main>
 
   <script src="script.js"></script>
 </body>
