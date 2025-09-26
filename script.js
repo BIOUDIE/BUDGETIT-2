@@ -1,38 +1,62 @@
-let budgets = JSON.parse(localStorage.getItem("budgets")) || [];
-let currentBudget = { title: "New Budget", items: [] };
+let currentBudget = {
+  title: "",
+  total: 0,
+  remaining: 0,
+  items: []
+};
 
-function startBudget() {
-  const titleInput = document.getElementById("new-budget-title");
-  const title = titleInput.value.trim();
-  if (title) {
-    currentBudget = { title: title, items: [] };
-    document.getElementById("budget-title").textContent = title;
-    document.getElementById("item-list").innerHTML = "";
-    document.getElementById("total").textContent = "0";
-    titleInput.value = "";
+const totalBudgetInput = document.getElementById("total-budget");
+const budgetTitleInput = document.getElementById("budget-title");
+const totalDisplay = document.getElementById("total");
+const remainingDisplay = document.getElementById("remaining");
+const itemDateInput = document.getElementById("item-date");
+const itemNameInput = document.getElementById("item-name");
+const itemPriceInput = document.getElementById("item-price");
+const itemList = document.getElementById("item-list");
+const savedBudgetsList = document.getElementById("saved-budgets");
+
+document.getElementById("start-budget").addEventListener("click", () => {
+  currentBudget.title = budgetTitleInput.value.trim();
+  currentBudget.total = parseFloat(totalBudgetInput.value) || 0;
+  currentBudget.remaining = currentBudget.total;
+  currentBudget.items = [];
+  updateList();
+  updateRemaining();
+});
+
+document.getElementById("add-item").addEventListener("click", () => {
+  const name = itemNameInput.value.trim();
+  const price = parseFloat(itemPriceInput.value);
+  const date = itemDateInput.value;
+
+  if (!name || isNaN(price) || !date) return;
+
+  currentBudget.items.push({ date, name, price });
+  currentBudget.remaining -= price;
+
+  itemNameInput.value = "";
+  itemPriceInput.value = "";
+  itemDateInput.value = "";
+
+  updateList();
+  updateRemaining();
+});
+
+document.getElementById("save-budget").addEventListener("click", () => {
+  if (!currentBudget.title) {
+    alert("Enter a budget title before saving.");
+    return;
   }
-}
-
-function addItem() {
-  const date = document.getElementById("item-date").value;
-  const name = document.getElementById("item-name").value.trim();
-  const price = parseFloat(document.getElementById("item-price").value);
-
-  if (date && name && !isNaN(price)) {
-    const item = { date, name, price };
-    currentBudget.items.push(item);
-    updateList();
-    document.getElementById("item-date").value = "";
-    document.getElementById("item-name").value = "";
-    document.getElementById("item-price").value = "";
-  }
-}
+  const budgets = JSON.parse(localStorage.getItem("budgets")) || [];
+  budgets.push(currentBudget);
+  localStorage.setItem("budgets", JSON.stringify(budgets));
+  loadSavedBudgets();
+  alert("Budget saved!");
+});
 
 function updateList() {
-  const list = document.getElementById("item-list");
-  list.innerHTML = "";
+  itemList.innerHTML = "";
   let total = 0;
-
   currentBudget.items.forEach((item) => {
     total += item.price;
     const li = document.createElement("li");
@@ -41,27 +65,32 @@ function updateList() {
       <span class="item-name">${item.name}</span> |
       <span class="item-price">₦${item.price.toFixed(2)}</span>
     `;
-    list.appendChild(li);
+    itemList.appendChild(li);
   });
-
-  document.getElementById("total").textContent = total.toFixed(2);
+  totalDisplay.textContent = total.toFixed(2);
 }
 
-window.addEventListener("beforeunload", () => {
-  if (currentBudget.items.length > 0) {
-    budgets.push(currentBudget);
-    localStorage.setItem("budgets", JSON.stringify(budgets));
-  }
-});
+function updateRemaining() {
+  remainingDisplay.textContent = `₦${currentBudget.remaining.toFixed(2)}`;
+  const percent = (currentBudget.remaining / currentBudget.total) * 100;
 
-function loadHistory() {
-  const historyList = document.getElementById("budget-history");
-  historyList.innerHTML = "";
+  remainingDisplay.style.color = "green";
+
+  if (percent <= 10 && percent >= 0) {
+    remainingDisplay.style.color = "darkorange"; // amber
+  } else if (percent < 0) {
+    remainingDisplay.style.color = "red";
+  }
+}
+
+function loadSavedBudgets() {
+  savedBudgetsList.innerHTML = "";
+  const budgets = JSON.parse(localStorage.getItem("budgets")) || [];
   budgets.forEach((b) => {
     const li = document.createElement("li");
-    li.textContent = `${b.title} - ${b.items.length} items`;
-    historyList.appendChild(li);
+    li.textContent = `${b.title} - ₦${b.total.toFixed(2)}`;
+    savedBudgetsList.appendChild(li);
   });
 }
 
-window.onload = loadHistory;
+window.onload = loadSavedBudgets;
