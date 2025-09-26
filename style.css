@@ -1,78 +1,68 @@
 body {
   font-family: Arial, sans-serif;
-  background: #f4f6f9;
   margin: 0;
   padding: 0;
-  color: #2f3542;
-}
-
-.container {
+  background-color: #2e2e2e; /* dark grey background */
   display: flex;
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
-  padding: 20px;
 }
 
-.card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+.container {
+  background: white;
+  border-radius: 10px;
   padding: 20px;
+  margin: 20px;
+  max-width: 600px;
   width: 100%;
-  max-width: 500px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 15px;
-  width: 80px;
-  height: 80px;
-  border-radius: 20%;
-}
-
-h1, h2 {
+h1, h2, h3 {
   text-align: center;
   margin-bottom: 15px;
 }
 
-input, button {
-  display: block;
-  width: 100%;
-  margin: 8px 0;
-  padding: 12px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+.budget-header, .add-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
-input {
-  background: #f1f2f6;
+input, button {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  flex: 1;
 }
 
 button {
-  background: #1e90ff;
-  color: #fff;
-  border: none;
+  background-color: #007bff;
+  color: white;
   cursor: pointer;
+  flex: none;
 }
 
 button:hover {
-  background: #3742fa;
+  background-color: #0056b3;
 }
 
-ul {
+#itemList, #savedBudgets {
   list-style: none;
   padding: 0;
 }
 
-ul li {
-  background: #f1f2f6;
-  margin: 5px 0;
-  padding: 10px;
-  border-radius: 6px;
+#itemList li, #savedBudgets li {
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 15px;
+  color: #333;
 }
 
-.hidden {
-  display: none;
+#itemList li span.date {
+  font-weight: bold;
+  color: #555;
+  margin-right: 10px;
 }
