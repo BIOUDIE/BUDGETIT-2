@@ -28,23 +28,25 @@ function addItem() {
 
   const name = document.getElementById("itemName").value;
   const price = parseFloat(document.getElementById("itemPrice").value);
+  const date = document.getElementById("itemDate").value;
 
-  if (!name || isNaN(price)) {
-    alert("Enter item and price");
+  if (!name || isNaN(price) || !date) {
+    alert("Enter item, price and date");
     return;
   }
 
-  currentBudget.items.push({ name, price });
+  currentBudget.items.push({ name, price, date });
   currentBudget.balance -= price;
 
   const li = document.createElement("li");
-  li.textContent = `${name}: ₦${price}`;
+  li.textContent = `${name} - ₦${price} (${date})`;
   document.getElementById("itemList").appendChild(li);
 
   document.getElementById("balance").textContent = currentBudget.balance;
 
   document.getElementById("itemName").value = "";
   document.getElementById("itemPrice").value = "";
+  document.getElementById("itemDate").value = "";
 }
 
 function saveBudget() {
@@ -79,11 +81,10 @@ function viewBudget(index) {
 
   let details = `Title: ${budget.title}\nDate: ${budget.date}\nTotal: ₦${budget.total}\nBalance: ₦${budget.balance}\n\nItems:\n`;
   budget.items.forEach(i => {
-    details += `${i.name}: ₦${i.price}\n`;
+    details += `${i.name}: ₦${i.price} (${i.date})\n`;
   });
 
   alert(details);
 }
 
-// Load saved budgets on startup
 loadSavedBudgets();
