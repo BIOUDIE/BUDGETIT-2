@@ -5,44 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BudgetIT</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="icon-512.png" type="image/png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#3a5a9a">
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js");
+      });
+    }
+  </script>
 </head>
 <body>
   <header>
-    <img src="icon-512.png" alt="BudgetIT Logo" class="logo">
     <h1>BudgetIT</h1>
   </header>
 
   <main>
-    <div class="container">
-      <div class="budget-section">
-        <div class="new-budget">
-          <input type="text" id="budget-title" placeholder="Enter budget title">
-          <input type="number" id="budget-total" placeholder="Enter total budget">
-          <button id="start-budget">Start Budget</button>
-        </div>
+    <section class="budget-card">
+      <h2>Start a New Budget</h2>
+      <input type="text" id="budgetTitle" placeholder="Budget Title">
+      <input type="number" id="budgetAmount" placeholder="Enter Total Budget">
+      <button id="startBudgetBtn">Start Budget</button>
 
-        <div id="budget-details" class="hidden">
-          <h2 id="display-title"></h2>
-          <p>Total Budget: ₦<span id="set-total">0</span></p>
-          <p>Remaining: ₦<span id="remaining-amount" class="status-normal">0</span></p>
-
-          <input type="text" id="item-name" placeholder="Item name">
-          <input type="number" id="item-amount" placeholder="Amount">
-          <input type="date" id="item-date">
-          <button id="add-item">Add Item</button>
-
-          <ul id="items-list"></ul>
-          <p>Spent: ₦<span id="total-amount">0</span></p>
-        </div>
+      <div id="budgetDetails" class="hidden">
+        <p><strong>Total Budget:</strong> ₦<span id="totalBudget">0</span></p>
+        <p><strong>Remaining:</strong> ₦<span id="remainingBudget">0</span></p>
+        <input type="date" id="itemDate">
+        <input type="text" id="itemName" placeholder="Item name">
+        <input type="number" id="itemPrice" placeholder="Price">
+        <button id="addItemBtn">Add Item</button>
+        <ul id="itemList"></ul>
+        <button id="saveBudgetBtn">Save Budget</button>
       </div>
+    </section>
 
-      <div class="saved-budgets">
-        <h2>Saved Budgets</h2>
-        <ul id="budget-list"></ul>
-      </div>
-    </div>
+    <section id="saved-budgets">
+      <h2>Saved Budgets</h2>
+      <ul id="savedBudgetsList"></ul>
+    </section>
   </main>
+
+  <div id="budgetModal" class="modal hidden">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <h2 id="modalTitle"></h2>
+      <p><strong>Total:</strong> ₦<span id="modalTotal"></span></p>
+      <p><strong>Remaining:</strong> ₦<span id="modalRemaining"></span></p>
+      <ul id="modalItems"></ul>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
