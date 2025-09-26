@@ -1,0 +1,53 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #2e3440;
+  color: #eceff4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+.container {
+  background: #3b4252;
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+h1 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+label {
+  display: block;
+  margin-top: 10px;
+}
+input, button, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 6px;
+  border: none;
+  font-size: 16px;
+}
+button {
+  background: #5e81ac;
+  color: white;
+  cursor: pointer;
+  margin-top: 15px;
+}
+button:hover {
+  background: #81a1c1;
+}
+.saved-budgets {
+  margin-top: 20px;
+}
+.budget-item {
+  background: #434c5e;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  cursor: pointer;
+}
