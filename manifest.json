@@ -3,9 +3,8 @@
   "short_name": "BudgetIT",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#2f3b45",
-  "theme_color": "#008080",
-  "orientation": "portrait",
+  "background_color": "#2f3542",
+  "theme_color": "#1e90ff",
   "icons": [
     {
       "src": "icon-192.png",
