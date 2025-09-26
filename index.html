@@ -1,46 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BudgetIT</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="icon" type="image/png" href="icon-512.png">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Separate Header -->
-  <div class="app-header">BudgetIT</div>
+  <header class="app-header">
+    <img src="icon-512.png" alt="BudgetIT Logo" class="logo">
+    <h1>BudgetIT</h1>
+  </header>
 
-  <!-- Main Container -->
-  <div class="container">
-    <div class="budget-header">
-      <input type="text" id="budgetTitle" placeholder="Enter budget title">
-      <input type="number" id="budgetAmount" placeholder="Enter total budget">
-      <input type="date" id="budgetDate">
-      <button onclick="startNewBudget()">Start Budget</button>
+  <div class="app-container">
+    <div class="budget-card">
+      <input type="text" id="new-budget-title" placeholder="Enter budget title" />
+      <button onclick="startBudget()">Start Budget</button>
+
+      <h2 id="budget-title">New Budget</h2>
+
+      <div class="item-inputs">
+        <input type="date" id="item-date" />
+        <input type="text" id="item-name" placeholder="Item name" />
+        <input type="number" id="item-price" placeholder="Price" />
+        <button onclick="addItem()">Add Item</button>
+      </div>
+
+      <ul id="item-list"></ul>
+      <p><strong>Total:</strong> ₦<span id="total">0</span></p>
     </div>
 
-    <div class="budget-info">
-      <h2 id="currentBudgetTitle"></h2>
-      <p><strong>Total:</strong> ₦<span id="totalBudget">0</span></p>
-      <p><strong>Spent:</strong> ₦<span id="spentAmount">0</span></p>
-      <p><strong>Balance:</strong> ₦<span id="balanceAmount">0</span></p>
+    <div class="history-card">
+      <h3>Saved Budgets</h3>
+      <ul id="budget-history"></ul>
     </div>
-
-    <div class="add-item">
-      <input type="text" id="itemName" placeholder="Item name">
-      <input type="number" id="itemPrice" placeholder="Item price">
-      <input type="date" id="itemDate">
-      <button onclick="addItem()">Add Item</button>
-    </div>
-
-    <h3>Items</h3>
-    <ul id="itemList"></ul>
-
-    <h3>Saved Budgets</h3>
-    <ul id="savedBudgets"></ul>
   </div>
 
-  <script src="app.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
