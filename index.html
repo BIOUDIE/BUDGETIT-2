@@ -3,55 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ELEKTRO BudgetIT</title>
-  <link rel="manifest" href="manifest.json">
+  <title>BudgetIT</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="icon-512.png">
 </head>
 <body>
   <div class="container">
-    <div class="card">
-      <img src="icon-192.png" alt="BudgetIT Logo" class="logo">
-      <h1>ELEKTRO BudgetIT</h1>
+    <h1 id="appTitle">BudgetIT</h1>
 
-      <!-- Budget form -->
-      <div class="budget-form">
-        <input type="text" id="budgetTitle" placeholder="Budget Title">
-        <input type="date" id="budgetDate">
-        <input type="number" id="totalBudget" placeholder="Total Budget">
-        <button onclick="startBudget()">Start Budget</button>
-      </div>
-
-      <!-- Active budget -->
-      <div id="activeBudget" class="hidden">
-        <h2 id="activeTitle"></h2>
-        <p>Date: <span id="activeDate"></span></p>
-        <p>Total Budget: ₦<span id="budgetAmount">0</span></p>
-        <p>Balance: ₦<span id="balance">0</span></p>
-
-        <div class="item-form">
-          <input type="text" id="itemName" placeholder="Item Name">
-          <input type="number" id="itemPrice" placeholder="Item Price">
-          <input type="date" id="itemDate">
-          <button onclick="addItem()">Add Item</button>
-        </div>
-
-        <ul id="itemList"></ul>
-        <button onclick="saveBudget()">Save Budget</button>
-      </div>
-
-      <!-- Saved budgets -->
-      <div class="saved-budgets">
-        <h2>Saved Budgets</h2>
-        <ul id="savedList"></ul>
-      </div>
+    <div class="budget-header">
+      <input type="text" id="budgetTitle" placeholder="Enter budget title">
+      <input type="number" id="budgetAmount" placeholder="Enter total budget">
+      <input type="date" id="budgetDate">
+      <button onclick="startNewBudget()">Start Budget</button>
     </div>
+
+    <div class="budget-info">
+      <h2 id="currentBudgetTitle"></h2>
+      <p><strong>Total:</strong> ₦<span id="totalBudget">0</span></p>
+      <p><strong>Spent:</strong> ₦<span id="spentAmount">0</span></p>
+      <p><strong>Balance:</strong> ₦<span id="balanceAmount">0</span></p>
+    </div>
+
+    <div class="add-item">
+      <input type="text" id="itemName" placeholder="Item name">
+      <input type="number" id="itemPrice" placeholder="Item price">
+      <input type="date" id="itemDate">
+      <button onclick="addItem()">Add Item</button>
+    </div>
+
+    <h3>Items</h3>
+    <ul id="itemList"></ul>
+
+    <h3>Saved Budgets</h3>
+    <ul id="savedBudgets"></ul>
   </div>
 
   <script src="app.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js");
-    }
-  </script>
 </body>
 </html>
