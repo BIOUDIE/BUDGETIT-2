@@ -1,7 +1,7 @@
 {
   "name": "BudgetIT",
   "short_name": "BudgetIT",
-  "start_url": ".",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#2f2f2f",
   "theme_color": "#3a5a9a",
