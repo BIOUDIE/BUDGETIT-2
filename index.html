@@ -8,38 +8,42 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app">
-    <h1>ELEKTRO BudgetIT</h1>
+  <div class="container">
+    <div class="card">
+      <img src="icon-192.png" alt="BudgetIT Logo" class="logo">
+      <h1>ELEKTRO BudgetIT</h1>
 
-    <!-- Budget form -->
-    <div class="budget-form">
-      <input type="text" id="budgetTitle" placeholder="Budget Title">
-      <input type="date" id="budgetDate">
-      <input type="number" id="totalBudget" placeholder="Total Budget">
-      <button onclick="startBudget()">Start Budget</button>
-    </div>
-
-    <!-- Active budget section -->
-    <div id="activeBudget" class="hidden">
-      <h2 id="activeTitle"></h2>
-      <p>Date: <span id="activeDate"></span></p>
-      <p>Total Budget: ₦<span id="budgetAmount">0</span></p>
-      <p>Balance: ₦<span id="balance">0</span></p>
-
-      <div class="item-form">
-        <input type="text" id="itemName" placeholder="Item Name">
-        <input type="number" id="itemPrice" placeholder="Item Price">
-        <button onclick="addItem()">Add Item</button>
+      <!-- Budget form -->
+      <div class="budget-form">
+        <input type="text" id="budgetTitle" placeholder="Budget Title">
+        <input type="date" id="budgetDate">
+        <input type="number" id="totalBudget" placeholder="Total Budget">
+        <button onclick="startBudget()">Start Budget</button>
       </div>
 
-      <ul id="itemList"></ul>
-      <button onclick="saveBudget()">Save Budget</button>
-    </div>
+      <!-- Active budget -->
+      <div id="activeBudget" class="hidden">
+        <h2 id="activeTitle"></h2>
+        <p>Date: <span id="activeDate"></span></p>
+        <p>Total Budget: ₦<span id="budgetAmount">0</span></p>
+        <p>Balance: ₦<span id="balance">0</span></p>
 
-    <!-- Saved budgets list -->
-    <div class="saved-budgets">
-      <h2>Saved Budgets</h2>
-      <ul id="savedList"></ul>
+        <div class="item-form">
+          <input type="text" id="itemName" placeholder="Item Name">
+          <input type="number" id="itemPrice" placeholder="Item Price">
+          <input type="date" id="itemDate">
+          <button onclick="addItem()">Add Item</button>
+        </div>
+
+        <ul id="itemList"></ul>
+        <button onclick="saveBudget()">Save Budget</button>
+      </div>
+
+      <!-- Saved budgets -->
+      <div class="saved-budgets">
+        <h2>Saved Budgets</h2>
+        <ul id="savedList"></ul>
+      </div>
     </div>
   </div>
 
