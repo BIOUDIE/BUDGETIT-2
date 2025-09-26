@@ -1,42 +1,89 @@
-function saveBudget() {
-  const title = document.getElementById("budgetTitle").value.trim();
-  const amount = document.getElementById("totalBudget").value;
-  const date = document.getElementById("budgetDate").value;
+let currentBudget = null;
+let items = [];
 
-  if (!title || !amount) {
-    alert("Enter a title and total budget");
+function startBudget() {
+  const title = document.getElementById("budgetTitle").value;
+  const date = document.getElementById("budgetDate").value;
+  const total = parseFloat(document.getElementById("totalBudget").value);
+
+  if (!title || !date || isNaN(total)) {
+    alert("Please fill all fields");
     return;
   }
 
-  let budgets = JSON.parse(localStorage.getItem("budgets")) || [];
-  budgets.push({ title, amount, date, timestamp: Date.now() });
-  localStorage.setItem("budgets", JSON.stringify(budgets));
+  currentBudget = { title, date, total, balance: total, items: [] };
+  items = [];
 
-  loadBudgets();
-  document.getElementById("budgetTitle").value = "";
-  document.getElementById("totalBudget").value = "";
-  document.getElementById("budgetDate").value = "";
+  document.getElementById("activeTitle").textContent = title;
+  document.getElementById("activeDate").textContent = date;
+  document.getElementById("budgetAmount").textContent = total;
+  document.getElementById("balance").textContent = total;
+
+  document.getElementById("itemList").innerHTML = "";
+  document.getElementById("activeBudget").classList.remove("hidden");
 }
 
-function loadBudgets() {
-  const budgets = JSON.parse(localStorage.getItem("budgets")) || [];
-  const list = document.getElementById("budgetsList");
+function addItem() {
+  if (!currentBudget) return;
+
+  const name = document.getElementById("itemName").value;
+  const price = parseFloat(document.getElementById("itemPrice").value);
+
+  if (!name || isNaN(price)) {
+    alert("Enter item and price");
+    return;
+  }
+
+  currentBudget.items.push({ name, price });
+  currentBudget.balance -= price;
+
+  const li = document.createElement("li");
+  li.textContent = `${name}: ₦${price}`;
+  document.getElementById("itemList").appendChild(li);
+
+  document.getElementById("balance").textContent = currentBudget.balance;
+
+  document.getElementById("itemName").value = "";
+  document.getElementById("itemPrice").value = "";
+}
+
+function saveBudget() {
+  if (!currentBudget) return;
+
+  let saved = JSON.parse(localStorage.getItem("budgets")) || [];
+  saved.push(currentBudget);
+  localStorage.setItem("budgets", JSON.stringify(saved));
+
+  loadSavedBudgets();
+  alert("Budget saved!");
+  currentBudget = null;
+  document.getElementById("activeBudget").classList.add("hidden");
+}
+
+function loadSavedBudgets() {
+  const saved = JSON.parse(localStorage.getItem("budgets")) || [];
+  const list = document.getElementById("savedList");
   list.innerHTML = "";
 
-  budgets.forEach((budget) => {
-    const div = document.createElement("div");
-    div.className = "budget-item";
-    div.innerHTML = `
-      <strong>${budget.title}</strong><br>
-      Amount: ₦${budget.amount}<br>
-      Date: ${budget.date || "Not set"}
-    `;
-    div.onclick = () =>
-      alert(
-        `Budget: ${budget.title}\nAmount: ₦${budget.amount}\nDate: ${budget.date || "Not set"}`
-      );
-    list.appendChild(div);
+  saved.forEach((budget, index) => {
+    const li = document.createElement("li");
+    li.textContent = `${budget.title} (${budget.date}) - ₦${budget.total}`;
+    li.onclick = () => viewBudget(index);
+    list.appendChild(li);
   });
 }
 
-window.onload = loadBudgets;
+function viewBudget(index) {
+  const saved = JSON.parse(localStorage.getItem("budgets")) || [];
+  const budget = saved[index];
+
+  let details = `Title: ${budget.title}\nDate: ${budget.date}\nTotal: ₦${budget.total}\nBalance: ₦${budget.balance}\n\nItems:\n`;
+  budget.items.forEach(i => {
+    details += `${i.name}: ₦${i.price}\n`;
+  });
+
+  alert(details);
+}
+
+// Load saved budgets on startup
+loadSavedBudgets();
