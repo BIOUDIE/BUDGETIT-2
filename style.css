@@ -2,69 +2,97 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #2f2f2f;
+  background: #2e2e2e; /* dark grey */
   color: #333;
 }
 
 header {
-  background-color: #3a5a9a;
-  padding: 1rem;
-  text-align: center;
+  background: #3b5998; /* medium desaturated blue */
   color: white;
+  text-align: center;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+header .logo {
+  width: 40px;
+  height: 40px;
 }
 
 main {
-  max-width: 600px;
-  margin: 20px auto;
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-.budget-controls,
-.item-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 15px;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px;
 }
 
-input, button {
-  padding: 10px;
-  font-size: 14px;
+.card {
+  background: white;
+  padding: 20px;
+  margin: 15px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 button {
-  background-color: teal;
-  color: white;
+  padding: 10px;
+  margin-top: 10px;
   border: none;
+  border-radius: 4px;
+  color: white;
   cursor: pointer;
 }
 
-button:hover {
-  opacity: 0.9;
+#start-budget, #add-item {
+  background: teal;
+}
+
+#save-budget {
+  background: darkcyan;
+  margin-left: 10px;
 }
 
 ul {
-  list-style: none;
+  list-style-type: none;
   padding: 0;
 }
 
 ul li {
+  background: #f0f0f0;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  border-radius: 4px;
   display: flex;
-  justify-content: space-between;
-  padding: 8px;
-  border-bottom: 1px solid #ccc;
+  gap: 10px;
 }
 
-.hidden {
-  display: none;
+.item-date {
+  font-weight: bold;
 }
 
-.remaining-warning {
-  color: darkorange;
+.item-name {
+  flex: 1;
 }
 
-.remaining-danger {
-  color: red;
+.item-price {
+  font-weight: bold;
 }
