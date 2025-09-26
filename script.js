@@ -1,124 +1,143 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const startBudgetBtn = document.getElementById("start-budget");
-  const budgetTitleInput = document.getElementById("budget-title");
-  const budgetTotalInput = document.getElementById("budget-total");
-  const budgetDetails = document.getElementById("budget-details");
-  const displayTitle = document.getElementById("display-title");
-  const setTotal = document.getElementById("set-total");
-  const remainingAmount = document.getElementById("remaining-amount");
-  const itemNameInput = document.getElementById("item-name");
-  const itemAmountInput = document.getElementById("item-amount");
-  const itemDateInput = document.getElementById("item-date");
-  const addItemBtn = document.getElementById("add-item");
-  const itemsList = document.getElementById("items-list");
-  const totalAmount = document.getElementById("total-amount");
-  const budgetList = document.getElementById("budget-list");
+const startBtn = document.getElementById("startBudgetBtn");
+const budgetAmount = document.getElementById("budgetAmount");
+const budgetTitle = document.getElementById("budgetTitle");
+const totalBudget = document.getElementById("totalBudget");
+const remainingBudget = document.getElementById("remainingBudget");
+const budgetDetails = document.getElementById("budgetDetails");
+const itemName = document.getElementById("itemName");
+const itemPrice = document.getElementById("itemPrice");
+const itemDate = document.getElementById("itemDate");
+const addItemBtn = document.getElementById("addItemBtn");
+const itemList = document.getElementById("itemList");
+const saveBudgetBtn = document.getElementById("saveBudgetBtn");
+const savedBudgetsList = document.getElementById("savedBudgetsList");
 
-  let budgets = JSON.parse(localStorage.getItem("budgets")) || {};
-  let currentBudget = null;
+// Modal
+const budgetModal = document.getElementById("budgetModal");
+const closeModal = document.getElementById("closeModal");
+const modalTitle = document.getElementById("modalTitle");
+const modalTotal = document.getElementById("modalTotal");
+const modalRemaining = document.getElementById("modalRemaining");
+const modalItems = document.getElementById("modalItems");
 
-  function updateRemainingStatus(total, spent) {
-    const remaining = total - spent;
-    remainingAmount.textContent = remaining;
+let budget = {
+  title: "",
+  total: 0,
+  remaining: 0,
+  items: []
+};
 
-    remainingAmount.className = "";
+startBtn.addEventListener("click", () => {
+  const title = budgetTitle.value.trim();
+  const amount = parseFloat(budgetAmount.value);
 
-    if (remaining < 0) {
-      remainingAmount.classList.add("status-danger");
-    } else if (remaining <= total * 0.1) {
-      remainingAmount.classList.add("status-warning");
-    } else {
-      remainingAmount.classList.add("status-normal");
-    }
-  }
-
-  function renderSavedBudgets() {
-    budgetList.innerHTML = "";
-    Object.keys(budgets).forEach(title => {
-      const li = document.createElement("li");
-      li.textContent = title;
-      li.addEventListener("click", () => loadBudget(title));
-      budgetList.appendChild(li);
-    });
-  }
-
-  function loadBudget(title) {
-    currentBudget = title;
-    displayTitle.textContent = title;
+  if (title && amount > 0) {
+    budget = { title, total: amount, remaining: amount, items: [] };
+    totalBudget.textContent = amount.toFixed(2);
+    updateRemaining();
     budgetDetails.classList.remove("hidden");
-
-    const budget = budgets[title];
-    setTotal.textContent = budget.total || 0;
-
-    itemsList.innerHTML = "";
-    let spent = 0;
-    budget.items.forEach(item => {
-      spent += item.amount;
-      addItemToDOM(item);
-    });
-
-    totalAmount.textContent = spent;
-    updateRemainingStatus(budget.total || 0, spent);
   }
+});
 
-  function addItemToDOM(item) {
+addItemBtn.addEventListener("click", () => {
+  const name = itemName.value.trim();
+  const price = parseFloat(itemPrice.value);
+  const date = itemDate.value;
+
+  if (name && price > 0 && date) {
+    budget.items.push({ date, name, price });
+    budget.remaining -= price;
+
+    renderItems();
+    updateRemaining();
+
+    itemName.value = "";
+    itemPrice.value = "";
+    itemDate.value = "";
+  }
+});
+
+function renderItems() {
+  itemList.innerHTML = "";
+  budget.items.forEach(i => {
+    const li = document.createElement("li");
+    li.textContent = `${i.date} | ${i.name} | ₦${i.price.toFixed(2)}`;
+    itemList.appendChild(li);
+  });
+}
+
+function updateRemaining() {
+  remainingBudget.textContent = budget.remaining.toFixed(2);
+
+  remainingBudget.classList.remove("remaining-normal", "remaining-warning", "remaining-danger");
+
+  if (budget.remaining <= 0) {
+    remainingBudget.classList.add("remaining-danger");
+  } else if (budget.remaining <= budget.total * 0.1) {
+    remainingBudget.classList.add("remaining-warning");
+  } else {
+    remainingBudget.classList.add("remaining-normal");
+  }
+}
+
+saveBudgetBtn.addEventListener("click", () => {
+  const budgets = JSON.parse(localStorage.getItem("budgets")) || [];
+  budgets.push(budget);
+  localStorage.setItem("budgets", JSON.stringify(budgets));
+  loadSavedBudgets();
+  alert("Budget saved!");
+});
+
+function loadSavedBudgets() {
+  savedBudgetsList.innerHTML = "";
+  const budgets = JSON.parse(localStorage.getItem("budgets")) || [];
+
+  budgets.forEach((b, index) => {
     const li = document.createElement("li");
 
-    const dateSpan = document.createElement("span");
-    dateSpan.className = "date";
-    dateSpan.textContent = item.date;
+    const text = document.createElement("span");
+    text.textContent = `${b.title} - ₦${b.total.toFixed(2)}`;
 
-    const nameSpan = document.createElement("span");
-    nameSpan.className = "name";
-    nameSpan.textContent = item.name;
+    const viewBtn = document.createElement("button");
+    viewBtn.textContent = "View";
+    viewBtn.style.background = "teal";
+    viewBtn.addEventListener("click", () => {
+      openModal(b);
+    });
 
-    const amountSpan = document.createElement("span");
-    amountSpan.className = "amount";
-    amountSpan.textContent = `₦${item.amount}`;
-
-    li.appendChild(dateSpan);
-    li.appendChild(nameSpan);
-    li.appendChild(amountSpan);
-
-    itemsList.appendChild(li);
-  }
-
-  startBudgetBtn.addEventListener("click", () => {
-    const title = budgetTitleInput.value.trim();
-    const total = parseFloat(budgetTotalInput.value);
-
-    if (title && !isNaN(total)) {
-      if (!budgets[title]) {
-        budgets[title] = { total, items: [] };
-      } else {
-        budgets[title].total = total;
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", () => {
+      if (confirm(`Delete budget "${b.title}"?`)) {
+        budgets.splice(index, 1);
+        localStorage.setItem("budgets", JSON.stringify(budgets));
+        loadSavedBudgets();
       }
-      localStorage.setItem("budgets", JSON.stringify(budgets));
-      loadBudget(title);
-    }
+    });
+
+    li.appendChild(text);
+    li.appendChild(viewBtn);
+    li.appendChild(delBtn);
+    savedBudgetsList.appendChild(li);
   });
+}
 
-  addItemBtn.addEventListener("click", () => {
-    const name = itemNameInput.value.trim();
-    const amount = parseFloat(itemAmountInput.value);
-    const date = itemDateInput.value;
-
-    if (name && !isNaN(amount) && date && currentBudget) {
-      const item = { name, amount, date };
-      budgets[currentBudget].items.push(item);
-      localStorage.setItem("budgets", JSON.stringify(budgets));
-
-      addItemToDOM(item);
-
-      const spent = budgets[currentBudget].items.reduce((sum, i) => sum + i.amount, 0);
-      totalAmount.textContent = spent;
-      updateRemainingStatus(budgets[currentBudget].total, spent);
-
-      itemNameInput.value = "";
-      itemAmountInput.value = "";
-      itemDateInput.value = "";
-    }
+function openModal(b) {
+  modalTitle.textContent = b.title;
+  modalTotal.textContent = b.total.toFixed(2);
+  modalRemaining.textContent = b.remaining.toFixed(2);
+  modalItems.innerHTML = "";
+  b.items.forEach(i => {
+    const li = document.createElement("li");
+    li.textContent = `${i.date} | ${i.name} | ₦${i.price.toFixed(2)}`;
+    modalItems.appendChild(li);
   });
+  budgetModal.classList.remove("hidden");
+}
 
-  renderSavedBudgets();
+closeModal.addEventListener("click", () => {
+  budgetModal.classList.add("hidden");
 });
+
+// Load saved budgets on startup
+loadSavedBudgets();
