@@ -5,55 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BudgetIT</title>
   <link rel="stylesheet" href="style.css">
-
-  <!-- Manifest and PWA -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#3a5a9a">
-  <link rel="icon" href="icon-192.png" type="image/png">
-
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js")
-          .then(reg => console.log("Service Worker registered:", reg.scope))
-          .catch(err => console.error("Service Worker registration failed:", err));
-      });
-    }
-  </script>
 </head>
 <body>
   <header>
+    <img src="icon-512.png" alt="Logo" class="logo">
     <h1>BudgetIT</h1>
   </header>
 
   <main>
-    <section id="budget-section">
-      <div class="budget-controls">
-        <input type="text" id="budget-title" placeholder="Enter Budget Title">
-        <input type="number" id="total-budget" placeholder="Enter Total Budget">
+    <div class="card">
+      <label for="budget-title">Budget Title:</label>
+      <input type="text" id="budget-title" placeholder="e.g. Household Budget">
+
+      <label for="total-budget">Total Budget (₦):</label>
+      <input type="number" id="total-budget" placeholder="Enter total budget">
+
+      <div class="budget-actions">
         <button id="start-budget">Start Budget</button>
+        <button id="save-budget">Save Budget</button>
       </div>
-      <div id="budget-info" class="hidden">
-        <h2 id="current-budget-title"></h2>
-        <p>Total: ₦<span id="budget-total">0</span></p>
-        <p>Remaining: ₦<span id="budget-remaining">0</span></p>
-      </div>
-    </section>
 
-    <section id="items-section" class="hidden">
-      <div class="item-controls">
-        <input type="date" id="item-date">
-        <input type="text" id="item-name" placeholder="Item name">
-        <input type="number" id="item-price" placeholder="Price">
-        <button id="add-item">Add Item</button>
-      </div>
-      <ul id="items-list"></ul>
-    </section>
+      <p>Total: ₦<span id="total">0.00</span></p>
+      <p>Remaining: <span id="remaining">₦0.00</span></p>
 
-    <section id="saved-budgets">
+      <label for="item-date">Item Date:</label>
+      <input type="date" id="item-date">
+
+      <label for="item-name">Item Name:</label>
+      <input type="text" id="item-name" placeholder="Enter item name">
+
+      <label for="item-price">Item Price (₦):</label>
+      <input type="number" id="item-price" placeholder="Enter price">
+
+      <button id="add-item">Add Item</button>
+
+      <ul id="item-list"></ul>
+    </div>
+
+    <div class="card">
       <h2>Saved Budgets</h2>
-      <ul id="budgets-list"></ul>
-    </section>
+      <ul id="saved-budgets"></ul>
+    </div>
   </main>
 
   <script src="script.js"></script>
