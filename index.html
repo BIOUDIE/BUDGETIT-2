@@ -1,40 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BudgetIT</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="icon-512.png" type="image/png">
 </head>
 <body>
-  <header class="app-header">
+  <header>
     <img src="icon-512.png" alt="BudgetIT Logo" class="logo">
     <h1>BudgetIT</h1>
   </header>
 
-  <div class="app-container">
-    <div class="budget-card">
-      <input type="text" id="new-budget-title" placeholder="Enter budget title" />
-      <button onclick="startBudget()">Start Budget</button>
+  <main>
+    <div class="container">
+      <div class="budget-section">
+        <div class="new-budget">
+          <input type="text" id="budget-title" placeholder="Enter budget title">
+          <input type="number" id="budget-total" placeholder="Enter total budget">
+          <button id="start-budget">Start Budget</button>
+        </div>
 
-      <h2 id="budget-title">New Budget</h2>
+        <div id="budget-details" class="hidden">
+          <h2 id="display-title"></h2>
+          <p>Total Budget: ₦<span id="set-total">0</span></p>
+          <p>Remaining: ₦<span id="remaining-amount" class="status-normal">0</span></p>
 
-      <div class="item-inputs">
-        <input type="date" id="item-date" />
-        <input type="text" id="item-name" placeholder="Item name" />
-        <input type="number" id="item-price" placeholder="Price" />
-        <button onclick="addItem()">Add Item</button>
+          <input type="text" id="item-name" placeholder="Item name">
+          <input type="number" id="item-amount" placeholder="Amount">
+          <input type="date" id="item-date">
+          <button id="add-item">Add Item</button>
+
+          <ul id="items-list"></ul>
+          <p>Spent: ₦<span id="total-amount">0</span></p>
+        </div>
       </div>
 
-      <ul id="item-list"></ul>
-      <p><strong>Total:</strong> ₦<span id="total">0</span></p>
+      <div class="saved-budgets">
+        <h2>Saved Budgets</h2>
+        <ul id="budget-list"></ul>
+      </div>
     </div>
-
-    <div class="history-card">
-      <h3>Saved Budgets</h3>
-      <ul id="budget-history"></ul>
-    </div>
-  </div>
+  </main>
 
   <script src="script.js"></script>
 </body>
