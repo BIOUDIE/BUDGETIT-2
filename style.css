@@ -1,53 +1,58 @@
 body {
   font-family: Arial, sans-serif;
-  background: #2e3440;
-  color: #eceff4;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  background: #2f3542;
+  color: #f1f2f6;
   margin: 0;
+  padding: 0;
 }
-.container {
-  background: #3b4252;
-  padding: 20px;
-  border-radius: 12px;
-  width: 90%;
+
+.app {
   max-width: 500px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  margin: auto;
+  padding: 20px;
 }
-h1 {
+
+h1, h2 {
   text-align: center;
-  margin-bottom: 15px;
 }
-label {
+
+input, button {
   display: block;
-  margin-top: 10px;
-}
-input, button, select {
   width: 100%;
+  margin: 8px 0;
   padding: 10px;
-  margin-top: 5px;
-  border-radius: 6px;
-  border: none;
   font-size: 16px;
-}
-button {
-  background: #5e81ac;
-  color: white;
-  cursor: pointer;
-  margin-top: 15px;
-}
-button:hover {
-  background: #81a1c1;
-}
-.saved-budgets {
-  margin-top: 20px;
-}
-.budget-item {
-  background: #434c5e;
-  padding: 10px;
   border-radius: 8px;
-  margin-top: 10px;
+  border: none;
+}
+
+input {
+  background: #57606f;
+  color: #fff;
+}
+
+button {
+  background: #1e90ff;
+  color: #fff;
   cursor: pointer;
+}
+
+button:hover {
+  background: #3742fa;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+ul li {
+  background: #57606f;
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.hidden {
+  display: none;
 }
