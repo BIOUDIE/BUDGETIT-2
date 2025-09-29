@@ -45,7 +45,7 @@ const archivedBudgetsList = document.getElementById('archived-budgets-list');
 const archiveBudgetBtn = document.getElementById('archive-budget-btn');
 
 // Spending View
-const spendDate = document.getElementById('spend-date'); // NEW ELEMENT
+const spendDate = document.getElementById('spend-date'); 
 const spendAmount = document.getElementById('spend-amount');
 const spendTargetAccount = document.getElementById('spend-target-account');
 const spendDescription = document.getElementById('spend-description');
@@ -86,8 +86,6 @@ async function signupUser() {
     const email = authEmail.value;
     const password = authPassword.value;
     const accountType = document.querySelector('input[name="account-type"]:checked').value; 
-    // IMPORTANT: Corporate/Joint accounts should default to admin for the first user, or be manually assigned. 
-    // For this corporate/joint account fix, we'll assign the first user as admin if they choose joint.
     const role = (accountType === 'joint') ? 'admin' : 'member'; 
 
     if (password.length < 6) {
@@ -101,7 +99,7 @@ async function signupUser() {
 
         await db.collection('users').doc(user.uid).set({
             email: user.email,
-            role: role, // Default role based on selection
+            role: role, 
             accountType: accountType, 
             organizationId: ORGANIZATION_ID
         });
@@ -129,7 +127,7 @@ auth.onAuthStateChanged(async (user) => {
                 // FIX: Admin Links for Corporate Accounts (MUST check both role AND account type)
                 if (userRole === 'admin' && userAccountType === 'joint') {
                     adminLinks.classList.remove('hidden');
-                    // listenForPendingRequests(); // Re-enable listener if you have it
+                    // listenForPendingRequests(); 
                 } else {
                     adminLinks.classList.add('hidden');
                 }
@@ -184,11 +182,13 @@ function handleNavigation(hash) {
     }
 
     if (hash === '#dashboard') {
-        renderDashboard();
+        // We rely on auth.onAuthStateChanged to call renderDashboard after login
+        // If user is already logged in and navigating, it runs fine here.
+        renderDashboard(); 
     } else if (hash === '#accounts') {
         renderAccountsView();
     } else if (hash === '#requests' && userRole === 'admin') {
-        // renderRequestsView(); // Re-enable if requests view is fully implemented
+        // renderRequestsView(); 
     }
 }
 
@@ -199,11 +199,12 @@ navItems.forEach(item => {
     });
 });
 
+// >>> START FIX FOR window.onload (Prevents 'Cannot read properties of null (reading 'uid')')
 window.onload = () => {
-    handleNavigation('#dashboard');
-    // Set default date for spending view
+    // Only set the date, rely on auth.onAuthStateChanged to handle view loading after Firebase Auth initializes.
     spendDate.valueAsDate = new Date();
 };
+// >>> END FIX FOR window.onload
 
 document.getElementById('menu-toggle').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('mobile-open');
@@ -316,6 +317,36 @@ function renderAccountCards(accounts) {
     });
 }
 
+// >>> START FIX 2: Missing renderSavedBudgets function (Fixes ReferenceError)
+function renderSavedBudgets(budgets) {
+    savedBudgetsList.innerHTML = ''; // Container for active budgets
+    archivedBudgetsList.innerHTML = ''; // Container for archived budgets (assuming you have this in HTML)
+
+    budgets.forEach(budget => {
+        const item = document.createElement('div');
+        item.className = `budget-item ${budget.status === 'archived' ? 'archived' : ''}`;
+        
+        // Basic item display
+        item.innerHTML = `
+            <h4>${budget.title} (₦${budget.totalAmount.toLocaleString()})</h4>
+            <p>Created: ${budget.createDate ? budget.createDate.toDate().toLocaleDateString() : 'N/A'}</p>
+            <p>Status: <span class="${budget.status === 'active' ? 'status-active' : 'status-archived'}">${budget.status.toUpperCase()}</span></p>
+            <button class="view-details-btn secondary-btn" data-budget-id="${budget.id}">View Details</button>
+            <button class="archive-budget-btn danger-btn" data-budget-id="${budget.id}">${budget.status === 'active' ? 'Archive' : 'Restore'}</button>
+        `;
+
+        if (budget.status === 'active') {
+             savedBudgetsList.appendChild(item);
+        } else {
+             // Append to archived list if you have one, otherwise ignore or append to main list
+             archivedBudgetsList.appendChild(item);
+        }
+    });
+
+    // You would typically add listeners for view-details-btn and archive-budget-btn here
+}
+// >>> END FIX 2: Missing renderSavedBudgets function
+
 async function renderAccountsView() {
     try {
         const orgIdentifier = (userAccountType === 'personal') ? auth.currentUser.uid : ORGANIZATION_ID;
@@ -370,7 +401,7 @@ async function submitSpendingRequest() {
         await db.collection('requests').add({
             amount: amount,
             accountId: accountId,
-            budgetId: budgetId, // Added budgetId for approval process
+            budgetId: budgetId, 
             description: description,
             userId: auth.currentUser.uid,
             userName: auth.currentUser.email,
@@ -395,7 +426,7 @@ async function submitSpendingRequest() {
 // FIX 3.1: Direct Spending Log for Personal Accounts (Balance Update)
 async function logPersonalSpending() {
     const amount = parseFloat(spendAmount.value);
-    const dateValue = spendDate.value; // NEW: Get date value
+    const dateValue = spendDate.value; 
     const [budgetId, accountId] = spendTargetAccount.value.split('|');
     const description = spendDescription.value;
 
@@ -416,7 +447,7 @@ async function logPersonalSpending() {
             description: description,
             userId: auth.currentUser.uid,
             userName: auth.currentUser.email,
-            date: transactionDate, // Save custom date
+            date: transactionDate, 
             status: 'logged', 
             type: 'spending'
         });
@@ -457,16 +488,99 @@ async function logPersonalSpending() {
 }
 
 
-// ... (renderRequestsView remains the same) ...
-
-
 // =========================================================================
-// 6. BUDGET CREATION & ARCHIVING
+// 6. BUDGET CREATION & ARCHIVING (Modal Functions Added)
 // =========================================================================
 
-// ... (Modal logic remains the same) ...
+// >>> START ADDED MODAL FUNCTIONALITY (Fixes New Budget/Split not working)
 
-// >>> START FIX FOR BUDGET CREATION <<<
+// Helper function to calculate allocation sum
+function calculateAllocationSum() {
+    const allocationRows = document.querySelectorAll('.allocation-row');
+    let sum = 0;
+    allocationRows.forEach(row => {
+        const amountInput = row.querySelector('.allocation-amount');
+        sum += parseFloat(amountInput.value) || 0;
+    });
+    return sum;
+}
+
+// Function to update remaining allocation display
+function updateAllocationSummary() {
+    const total = parseFloat(modalTotalAmount.value) || 0;
+    const allocated = calculateAllocationSum();
+    const remaining = total - allocated;
+
+    allocatedSumSpan.textContent = allocated.toLocaleString();
+    allocationRemainingSpan.textContent = remaining.toLocaleString();
+
+    // Style the remaining text based on the amount
+    if (remaining < 0) {
+        allocationRemainingSpan.style.color = 'var(--color-danger)';
+    } else if (remaining === 0) {
+        allocationRemainingSpan.style.color = 'var(--color-primary)';
+    } else {
+        allocationRemainingSpan.style.color = 'var(--color-secondary)';
+    }
+}
+
+// Function to add a new allocation row
+function addAllocationRow() {
+    const newRow = document.createElement('tr');
+    newRow.className = 'allocation-row';
+    newRow.innerHTML = `
+        <td><input type="text" class="allocation-name" placeholder="E.g., Rent" required></td>
+        <td><input type="number" class="allocation-amount" placeholder="Amount (₦)" min="0" required></td>
+        <td><button type="button" class="remove-allocation-btn danger-btn"><i class="fas fa-times"></i></button></td>
+    `;
+    allocationTable.querySelector('tbody').appendChild(newRow);
+
+    // Add event listener to new amount input to recalculate on change
+    newRow.querySelector('.allocation-amount').addEventListener('input', updateAllocationSummary);
+    newRow.querySelector('.allocation-amount').addEventListener('change', updateAllocationSummary); // Also on change
+
+    // Add event listener for removing the row
+    newRow.querySelector('.remove-allocation-btn').addEventListener('click', (e) => {
+        // e.target is the <i>, closest('tr') finds the row element
+        e.target.closest('.allocation-row').remove(); 
+        updateAllocationSummary();
+    });
+}
+
+// Event Listeners for the Budget Modal
+
+// 1. Open Modal
+openNewBudgetModalBtn.addEventListener('click', () => {
+    // Reset form fields
+    budgetModal.querySelector('form').reset();
+    
+    // Clear dynamic allocation rows 
+    const tbody = allocationTable.querySelector('tbody');
+    tbody.innerHTML = '';
+    
+    // Add one starting allocation row
+    addAllocationRow();
+    
+    // Reset summary display
+    updateAllocationSummary(); 
+
+    budgetModal.classList.remove('hidden');
+});
+
+// 2. Close Modal
+budgetModal.querySelector('.close-btn').addEventListener('click', () => {
+    budgetModal.classList.add('hidden');
+});
+
+// 3. Add Allocation Row
+addAllocationBtn.addEventListener('click', addAllocationRow);
+
+// 4. Update summary when total amount changes
+modalTotalAmount.addEventListener('input', updateAllocationSummary);
+
+// >>> END ADDED MODAL FUNCTIONALITY 
+
+// BUDGET FINALIZATION LOGIC (Previously Fixed)
 finalizeBudgetBtn.addEventListener('click', async () => {
     const title = modalBudgetTitle.value.trim();
     const totalAmount = parseFloat(modalTotalAmount.value);
@@ -498,12 +612,13 @@ finalizeBudgetBtn.addEventListener('click', async () => {
         }
     });
 
-    if (allocatedSum !== totalAmount) {
+    // Check if allocation matches total exactly
+    if (Math.abs(allocatedSum - totalAmount) > 0.01) { // Use small epsilon for float comparison safety
         alert(`Allocation error: Total allocated (₦${allocatedSum.toLocaleString()}) must match Total Budget (₦${totalAmount.toLocaleString()}).`);
         return;
     }
     
-    // FIX: Set Organization ID based on user type for isolation (This fixes budget creation)
+    // Set Organization ID based on user type for isolation
     const orgIdentifier = (userAccountType === 'personal') ? auth.currentUser.uid : ORGANIZATION_ID;
 
     try {
@@ -512,7 +627,7 @@ finalizeBudgetBtn.addEventListener('click', async () => {
             totalAmount: totalAmount,
             otherDetails: otherDetails,
             accounts: accounts,
-            organizationId: orgIdentifier, // Use determined identifier
+            organizationId: orgIdentifier, 
             creatorId: auth.currentUser.uid,
             createDate: firebase.firestore.FieldValue.serverTimestamp(),
             status: 'active'
@@ -525,12 +640,9 @@ finalizeBudgetBtn.addEventListener('click', async () => {
 
     } catch (e) {
         console.error("Error finalizing budget: ", e);
-        alert("Failed to save budget.");
+        alert("Failed to save budget. Check console for permission/data errors.");
     }
 });
-// >>> END FIX FOR BUDGET CREATION <<<
-
-// ... (Archive Logic remains the same) ...
 
 
 // =========================================================================
