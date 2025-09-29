@@ -100,22 +100,25 @@
             </section>
             
             <section id="spending-view" class="content-view hidden">
-                <h2 id="spending-view-title">Submit New Spending Request</h2> 
-                <div class="form-card">
-                    <label for="spend-amount">Amount (₦):</label>
-                    <input type="number" id="spend-amount" placeholder="Enter amount">
+    <h2 id="spending-view-title">Submit New Spending Request</h2> 
+    <div class="form-card">
+        
+        <label for="spend-date">Date of Transaction:</label>
+        <input type="date" id="spend-date" value="" required>
+        <label for="spend-amount">Amount (₦):</label>
+        <input type="number" id="spend-amount" placeholder="Enter amount">
 
-                    <label for="spend-target-account">Target Account:</label>
-                    <select id="spend-target-account">
-                        <option value="">Select Account (e.g. GTB - House)</option>
-                    </select>
+        <label for="spend-target-account">Target Account:</label>
+        <select id="spend-target-account">
+            <option value="">Select Account (e.g. GTB - House)</option>
+        </select>
 
-                    <label for="spend-description">Description:</label>
-                    <textarea id="spend-description" placeholder="Briefly describe the spending"></textarea>
+        <label for="spend-description">Description:</label>
+        <textarea id="spend-description" placeholder="Briefly describe the spending"></textarea>
 
-                    <button id="submit-request-btn" class="primary-btn">Submit for Approval</button>
-                </div>
-            </section>
+        <button id="submit-request-btn" class="primary-btn">Submit for Approval</button>
+    </div>
+</section>
             
             <section id="requests-view" class="content-view hidden">
                 <h2>Pending Spending Approvals</h2>
