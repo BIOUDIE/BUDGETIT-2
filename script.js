@@ -220,7 +220,7 @@ async function initializeAppData() {
         // ADD THIS FIELD
         creatorId: currentUser.uid, 
         // ...
-    };    
+    }    
 }
 
 // =========================================================================
@@ -578,6 +578,7 @@ finalizeBudgetBtn.addEventListener('click', handleFinalizeBudget);
 
 // --- Spending Request Listener ---
 submitRequestBtn.addEventListener('click', handleSubmitRequest);
+
 
 
 
