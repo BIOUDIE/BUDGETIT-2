@@ -136,19 +136,17 @@ function handleSignUp() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
     
-    if (password.length < 6) {
-        alert("Password must be at least 6 characters long.");
-        return;
-    }
+    // ... (password length check) ...
 
     auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
             const user = userCredential.user;
-            // 1. Create a record in the 'users' collection with a default role
+            // 1. Create a record in the 'users' collection with the new default role
             return db.collection('users').doc(user.uid).set({
                 email: user.email,
-                role: 'subordinate', // Default role for new signups
-                organizationId: ORGANIZATION_ID,
+                // CHANGE ROLE HERE: Every new user is a 'super_admin' of their own private budget
+                role: 'super_admin', 
+                creatorId: user.uid, // Linking role to their own UID
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         })
@@ -580,4 +578,5 @@ finalizeBudgetBtn.addEventListener('click', handleFinalizeBudget);
 
 // --- Spending Request Listener ---
 submitRequestBtn.addEventListener('click', handleSubmitRequest);
+
 
