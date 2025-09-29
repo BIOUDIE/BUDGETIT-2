@@ -14,6 +14,16 @@
         <div class="auth-card">
             <h2>Welcome to Elektro BudgetIT</h2>
             <p>Please log in or sign up to continue.</p>
+
+            <div class="account-type-selection">
+                <label>
+                    <input type="radio" name="account-type" value="personal" checked> Personal Account
+                </label>
+                <label>
+                    <input type="radio" name="account-type" value="joint"> Joint/Corporate Account
+                </label>
+            </div>
+            <hr style="border-color: #eee; margin: 15px 0;">
             <input type="email" id="auth-email" placeholder="Email">
             <input type="password" id="auth-password" placeholder="Password">
             <button id="login-btn" class="primary-btn">Log In</button>
@@ -36,11 +46,16 @@
             </button>
         </header>
 
-        <aside id="sidebar" class="mobile-hidden"> 
+        <aside id="sidebar"> 
+            <div class="logo-area">
+                <img src="icon-192.png" alt="Logo" class="sidebar-logo">
+                <h2>BudgetIT</h2>
+            </div>
+            
             <nav id="main-nav">
                 <a href="#dashboard" class="nav-item active"><i class="fas fa-chart-line"></i> Dashboard</a>
                 <a href="#accounts" class="nav-item"><i class="fas fa-wallet"></i> Accounts & Splits</a>
-                <a href="#spending" class="nav-item"><i class="fas fa-receipt"></i> Submit Spending</a>
+                <a href="#spending" class="nav-item" id="spending-nav-item"><i class="fas fa-receipt"></i> Submit Spending</a>
                 
                 <div id="admin-links" class="hidden">
                     <hr>
@@ -63,7 +78,8 @@
                     <div class="stat-card"><h3>Remaining</h3><p id="dash-total-remaining">₦0.00</p></div>
                 </div>
                 
-                <div id="account-cards-container"></div>
+                <div id="account-cards-container">
+                    </div>
             </section>
             
             <section id="accounts-view" class="content-view hidden">
@@ -71,13 +87,19 @@
                 <button id="open-new-budget-modal" class="primary-btn"><i class="fas fa-plus-circle"></i> Create New Budget & Split</button>
                 
                 <div class="saved-budgets-list">
-                    <h3>Saved Budgets</h3>
+                    <h3>Active Budgets</h3>
                     <ul id="saved-budgets-list"></ul>
+
+                    <button id="archive-budget-btn" class="secondary-btn hidden" style="margin-top: 15px;">
+                        <i class="fas fa-archive"></i> Finalize & Archive Current Budget
+                    </button>
+                    <h3 style="margin-top: 30px;">Archived Budget History</h3>
+                    <ul id="archived-budgets-list"></ul>
                 </div>
             </section>
             
             <section id="spending-view" class="content-view hidden">
-                <h2>Submit New Spending Request</h2>
+                <h2 id="spending-view-title">Submit New Spending Request</h2> 
                 <div class="form-card">
                     <label for="spend-amount">Amount (₦):</label>
                     <input type="number" id="spend-amount" placeholder="Enter amount">
@@ -103,9 +125,7 @@
                 <h2>User Management</h2>
                 <p>User management tools will appear here.</p>
             </section>
-            
         </main>
-        
     </div>
 
     <div id="budget-modal" class="modal hidden">
@@ -113,12 +133,14 @@
             <h3>Create & Split New Budget</h3>
             <span class="close-btn">&times;</span>
             
-            <label for="modal-budget-title">Budget Title:</label>
-            <input type="text" id="modal-budget-title" placeholder="e.g. Q4 2024 Operations">
+            <label for="modal-budget-title">Budget/Account Name:</label>
+            <input type="text" id="modal-budget-title" placeholder="e.g. Q4 2024 Operations OR Smith Family Budget">
 
             <label for="modal-total-amount">Total Budget Amount (₦):</label>
             <input type="number" id="modal-total-amount" placeholder="Enter total amount">
             
+            <label for="modal-other-details">Other Details (Optional):</label>
+            <input type="text" id="modal-other-details" placeholder="e.g. Corporation Name or Family Name">
             <h4>Allocate to Accounts</h4>
             <div id="allocation-table"></div>
             <button id="add-allocation-btn" class="secondary-btn"><i class="fas fa-plus"></i> Add Account Split</button>
@@ -131,6 +153,17 @@
         </div>
     </div>
 
+    <div id="history-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="history-modal-title">Spending History</h3>
+            <span class="close-btn">&times;</span>
+            <div id="history-list">
+                </div>
+            <p id="history-empty-message" class="hidden" style="text-align: center; margin-top: 20px;">
+                No spending history found for this budget split.
+            </p>
+        </div>
+    </div>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
