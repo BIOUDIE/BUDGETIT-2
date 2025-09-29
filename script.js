@@ -551,8 +551,12 @@ function addAllocationRow() {
 
 // 1. Open Modal
 openNewBudgetModalBtn.addEventListener('click', () => {
-    // Reset form fields
-    budgetModal.querySelector('form').reset();
+    
+    // FIX: Instead of calling .reset() on a potentially missing form, 
+    // reset individual input fields manually.
+    modalBudgetTitle.value = '';
+    modalTotalAmount.value = '';
+    modalOtherDetails.value = '';
     
     // Clear dynamic allocation rows 
     const tbody = allocationTable.querySelector('tbody');
@@ -561,7 +565,7 @@ openNewBudgetModalBtn.addEventListener('click', () => {
     // Add one starting allocation row
     addAllocationRow();
     
-    // Reset summary display
+    // Reset summary display (via the function that handles it)
     updateAllocationSummary(); 
 
     budgetModal.classList.remove('hidden');
@@ -694,3 +698,4 @@ async function openHistoryModal(accountId, accountName) {
 historyModal.querySelector('.close-btn').addEventListener('click', () => {
     historyModal.classList.add('hidden');
 });
+
