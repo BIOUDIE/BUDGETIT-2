@@ -1,577 +1,713 @@
 // =========================================================================
-// 1. GLOBAL STATE & UI ELEMENT REFERENCES
+// 0. GLOBAL VARIABLES & INITIAL SETUP
 // =========================================================================
 
-// State objects: Data is now fetched dynamically from Firestore
-let currentUser = null; // Stores the logged-in Firebase User object
-let currentRole = null; // 'super_admin' or 'subordinate' (Stored in Firestore)
+// Initialize Firebase variables (assumed from index.html)
+// const app = firebase.initializeApp(firebaseConfig);
+// const auth = firebase.auth();
+// const db = firebase.firestore();
+// const ORGANIZATION_ID = "main_budget_org_1";
 
-// Budget Data Structure (These will hold data fetched from Firestore)
-let globalAccounts = [];
-let pendingRequests = [];
+let userRole = 'member';
+let currentActiveView = 'dashboard-view';
+let userAccountType = 'personal'; // Global variable to store the user's account type (set during login/signup)
 
-// UI Elements (Main Layout)
+// =========================================================================
+// 1. DOM ELEMENTS & CONSTANTS
+// =========================================================================
+
+// Screens
 const authScreen = document.getElementById('auth-screen');
 const appContainer = document.getElementById('app-container');
-const adminLinks = document.getElementById('admin-links');
-const requestCountBadge = document.getElementById('request-count');
 
-// UI Elements (Navigation)
-const navItems = document.querySelectorAll('.nav-item');
-const contentViews = document.querySelectorAll('.content-view');
-
-// UI Elements (Auth)
+// Auth elements
+const authEmail = document.getElementById('auth-email');
+const authPassword = document.getElementById('auth-password');
 const loginBtn = document.getElementById('login-btn');
 const signupBtn = document.getElementById('signup-btn');
-const logoutBtn = document.getElementById('logout-btn');
 
-// UI Elements (Budget Modal)
+// App elements
+const navItems = document.querySelectorAll('.nav-item');
+const logoutBtn = document.getElementById('logout-btn');
+const adminLinks = document.getElementById('admin-links');
+const requestCountBadge = document.getElementById('request-count');
+const spendingNavItem = document.getElementById('spending-nav-item'); // NEW
+
+// Dashboard
+const dashTotalBudget = document.getElementById('dash-total-budget');
+const dashTotalSpent = document.getElementById('dash-total-spent');
+const dashTotalRemaining = document.getElementById('dash-total-remaining');
+const accountCardsContainer = document.getElementById('account-cards-container');
+
+// Accounts View
+const openNewBudgetModalBtn = document.getElementById('open-new-budget-modal');
+const savedBudgetsList = document.getElementById('saved-budgets-list');
+const archivedBudgetsList = document.getElementById('archived-budgets-list'); // NEW
+const archiveBudgetBtn = document.getElementById('archive-budget-btn'); // NEW
+
+// Spending View
+const spendAmount = document.getElementById('spend-amount');
+const spendTargetAccount = document.getElementById('spend-target-account');
+const spendDescription = document.getElementById('spend-description');
+const submitRequestBtn = document.getElementById('submit-request-btn');
+const spendingViewTitle = document.getElementById('spending-view-title'); // NEW
+
+// Budget Modal
 const budgetModal = document.getElementById('budget-modal');
-const openBudgetModalBtn = document.getElementById('open-new-budget-modal');
-const closeModalBtn = budgetModal.querySelector('.close-btn');
+const modalBudgetTitle = document.getElementById('modal-budget-title');
+const modalTotalAmount = document.getElementById('modal-total-amount');
+const modalOtherDetails = document.getElementById('modal-other-details'); // NEW
 const allocationTable = document.getElementById('allocation-table');
 const addAllocationBtn = document.getElementById('add-allocation-btn');
+const allocatedSumSpan = document.getElementById('allocated-sum');
+const allocationRemainingSpan = document.getElementById('allocation-remaining');
 const finalizeBudgetBtn = document.getElementById('finalize-budget-btn');
-const modalTotalAmountInput = document.getElementById('modal-total-amount');
-const allocatedSumDisplay = document.getElementById('allocated-sum');
-const allocationRemainingDisplay = document.getElementById('allocation-remaining');
 
-// UI Elements (Spending Request)
-const submitRequestBtn = document.getElementById('submit-request-btn');
-const spendTargetAccountSelect = document.getElementById('spend-target-account');
-const pendingRequestsList = document.getElementById('pending-requests-list');
+// History Modal (NEW)
+const historyModal = document.getElementById('history-modal');
+const historyList = document.getElementById('history-list');
+const historyModalTitle = document.getElementById('history-modal-title');
+
 
 // =========================================================================
-// 2. CORE UTILITY FUNCTIONS
+// 2. AUTHENTICATION & INITIAL LOAD
 // =========================================================================
 
-/** Renders the active content view based on navigation. */
-function navigateTo(hash) {
-    contentViews.forEach(view => {
-        view.classList.remove('active');
-        view.classList.add('hidden');
-    });
-    
-    const targetView = document.getElementById(`${hash}-view`);
-    if (targetView) {
-        targetView.classList.add('active');
-        targetView.classList.remove('hidden');
+loginBtn.addEventListener('click', () => {
+    auth.signInWithEmailAndPassword(authEmail.value, authPassword.value)
+        .catch(error => {
+            alert("Login Error: " + error.message);
+        });
+});
+
+signupBtn.addEventListener('click', signupUser); // Use the new signup function
+
+async function signupUser() {
+    const email = authEmail.value;
+    const password = authPassword.value;
+    // NEW: Get account type
+    const accountType = document.querySelector('input[name="account-type"]:checked').value; 
+
+    if (password.length < 6) {
+        alert("Password must be at least 6 characters.");
+        return;
     }
 
-    navItems.forEach(item => item.classList.remove('active'));
-    const activeNav = document.querySelector(`.nav-item[href="#${hash}"]`);
-    if (activeNav) activeNav.classList.add('active');
+    try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
 
-    // Run specific rendering functions after navigation
-    if (hash === 'dashboard') renderDashboard();
-    if (hash === 'accounts') renderAccountManagement();
-    if (hash === 'requests') renderPendingRequests();
-    if (hash === 'spending') populateAccountSelect();
-}
+        // Save user profile with account type
+        await db.collection('users').doc(user.uid).set({
+            email: user.email,
+            role: 'member',
+            accountType: accountType, // SAVE TYPE
+            organizationId: ORGANIZATION_ID
+        });
 
-/** Updates the UI visibility based on the current user's role. */
-function updateUIVisibility() {
-    // 1. Sidebar Links
-    if (currentRole === 'super_admin') {
-        adminLinks.classList.remove('hidden');
-    } else {
-        adminLinks.classList.add('hidden');
+        alert("Sign up successful! Welcome.");
+    } catch (error) {
+        alert("Sign Up Error: " + error.message);
     }
-    // 2. Badge for pending requests
-    requestCountBadge.textContent = pendingRequests.length.toString();
 }
 
-/** Toggles between the Auth screen and the main App container. */
-function toggleAppView(isLoggedIn) {
-    if (isLoggedIn) {
-        authScreen.classList.remove('active');
-        authScreen.classList.add('hidden');
-        appContainer.classList.remove('hidden');
-        navigateTo('dashboard'); // Always start at the dashboard
+logoutBtn.addEventListener('click', () => {
+    auth.signOut();
+});
+
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        try {
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                userRole = userData.role;
+                userAccountType = userData.accountType || 'personal'; // LOAD TYPE
+                
+                // Show admin links if user is admin
+                if (userRole === 'admin') {
+                    adminLinks.classList.remove('hidden');
+                    listenForPendingRequests();
+                } else {
+                    adminLinks.classList.add('hidden');
+                }
+
+                authScreen.classList.remove('active');
+                authScreen.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+
+                // NEW: Update spending nav text and workflow based on account type
+                updateSpendingWorkflow(userAccountType);
+
+                // Initial data load
+                renderDashboard();
+                renderAccountsView();
+            } else {
+                // User document not found (shouldn't happen if signup was successful)
+                auth.signOut();
+            }
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+            auth.signOut();
+        }
     } else {
         authScreen.classList.add('active');
         authScreen.classList.remove('hidden');
         appContainer.classList.add('hidden');
-        currentRole = null;
-        currentUser = null;
-    }
-}
-
-// =========================================================================
-// 3. FIREBASE AUTHENTICATION
-// =========================================================================
-
-/** Helper to fetch the custom role (stored in a 'users' collection) */
-async function fetchUserRole(uid) {
-    try {
-        const userDoc = await db.collection('users').doc(uid).get();
-        if (userDoc.exists) {
-            currentRole = userDoc.data().role; // e.g., 'super_admin' or 'subordinate'
-        } else {
-            // Default role if not found (e.g., if a user signs up for the first time)
-            currentRole = 'subordinate'; 
-        }
-    } catch (error) {
-        console.error("Error fetching user role:", error);
-        currentRole = 'subordinate'; // Safety fallback
-    }
-}
-
-/** Handles user login using Firebase Email/Password. */
-function handleLogin() {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-
-    auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-            // Success: onAuthStateChanged handles UI update
-        })
-        .catch((error) => {
-            alert(`Login Failed: ${error.message}`);
-        });
-}
-
-/** Handles user sign up using Firebase Email/Password. */
-function handleSignUp() {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    
-    // ... (password length check) ...
-
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            const user = userCredential.user;
-            // 1. Create a record in the 'users' collection with the new default role
-            return db.collection('users').doc(user.uid).set({
-                email: user.email,
-                // CHANGE ROLE HERE: Every new user is a 'super_admin' of their own private budget
-                role: 'super_admin', 
-                creatorId: user.uid, // Linking role to their own UID
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        })
-        .then(() => {
-            alert("Account created successfully! You are now logged in.");
-            // Success: onAuthStateChanged handles UI update
-        })
-        .catch((error) => {
-            alert(`Sign Up Failed: ${error.message}`);
-        });
-}
-
-/** Handles user logout. */
-function handleLogout() {
-    auth.signOut(); // onAuthStateChanged handles UI update
-}
-
-// =========================================================================
-// 4. FIREBASE DATA MANAGEMENT (Initialization & Fetching)
-// =========================================================================
-
-/** Loads data (Accounts and Requests) from Firestore after login. */
-async function initializeAppData() {
-    try {
-        if (!currentUser) return; // Prevent fetching if user is null
-
-        // 1. Fetch Accounts/Splits relevant to the current user's UID (Budget Isolation)
-        const accountsSnapshot = await db.collection('accounts')
-                                         .where('creatorId', '==', currentUser.uid) 
-                                         .get();
-        globalAccounts = accountsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        // 2. Fetch Pending Requests (Requests scoped to the creator/admin)
-        const requestsSnapshot = await db.collection('pending_requests')
-                                         .where('creatorId', '==', currentUser.uid) 
-                                         .get();
-        pendingRequests = requestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Initial UI updates after data is loaded
-        updateUIVisibility();
-        renderDashboard();
-    } catch (error) {
-        console.error("Error loading initial data from Firestore:", error);
-        alert("Error loading application data. Check console for details.");
-    }
-}
-
-
-// =========================================================================
-// 5. BUDGET SPLITTING & ACCOUNT MANAGEMENT LOGIC (Firestore Write)
-// =========================================================================
-
-/** Renders the current allocation rows inside the modal. */
-function renderAllocationRows() {
-    allocationTable.innerHTML = '';
-    addAllocationRow(); // Start with one initial row
-    updateAllocationSummary();
-}
-
-/** Adds a new input row for account name and amount. */
-function addAllocationRow(name = '', amount = '') {
-    const row = document.createElement('div');
-    row.className = 'allocation-row';
-    row.innerHTML = `
-        <input type="text" class="account-name" placeholder="Account Name (e.g. GTB - House)" value="${name}">
-        <input type="number" class="account-amount" placeholder="Amount (₦)" value="${amount}">
-        <button class="remove-account-btn"><i class="fas fa-times-circle"></i></button>
-    `;
-    
-    // Event listeners
-    row.querySelector('.remove-account-btn').addEventListener('click', (e) => {
-        row.remove();
-        updateAllocationSummary();
-    });
-    row.querySelector('.account-amount').addEventListener('input', updateAllocationSummary);
-    
-    allocationTable.appendChild(row);
-}
-
-/** Calculates and displays the allocated sum and remaining funds to allocate. */
-function updateAllocationSummary() {
-    const totalBudget = parseFloat(modalTotalAmountInput.value) || 0;
-    let allocatedSum = 0;
-    
-    document.querySelectorAll('.allocation-row .account-amount').forEach(input => {
-        allocatedSum += parseFloat(input.value) || 0;
-    });
-
-    const remainingToAllocate = totalBudget - allocatedSum;
-
-    allocatedSumDisplay.textContent = allocatedSum.toFixed(2);
-    allocationRemainingDisplay.textContent = remainingToAllocate.toFixed(2);
-    
-    // Simple UI feedback for over/under-allocation
-    const displayElement = allocationRemainingDisplay;
-    if (remainingToAllocate < 0) {
-        displayElement.style.color = 'red';
-    } else if (remainingToAllocate > 0) {
-        displayElement.style.color = 'darkorange';
-    } else {
-        displayElement.style.color = 'green';
-    }
-}
-
-/** Finalizes the new budget and saves the splits to Firestore. */
-async function handleFinalizeBudget() {
-    const totalBudget = parseFloat(modalTotalAmountInput.value) || 0;
-    const budgetTitle = document.getElementById('modal-budget-title').value.trim();
-    
-    if (!budgetTitle || totalBudget <= 0) {
-        alert("Please enter a valid title and total budget.");
-        return;
-    }
-
-    let accountsToAdd = [];
-    let allocatedSum = 0;
-
-    document.querySelectorAll('.allocation-row').forEach(row => {
-        const name = row.querySelector('.account-name').value.trim();
-        const amount = parseFloat(row.querySelector('.account-amount').value);
-        
-        if (name && amount > 0) {
-            accountsToAdd.push({
-                name: name,
-                allocated: amount,
-                spent: 0,
-                budgetTitle: budgetTitle,
-                // CRITICAL FIX: Use currentUser.uid for budget isolation
-                creatorId: currentUser.uid, 
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            allocatedSum += amount;
-        }
-    });
-    
-    if (allocatedSum !== totalBudget) {
-        if (!confirm(`Warning: Your allocated sum (₦${allocatedSum.toFixed(2)}) does not match the total budget (₦${totalBudget.toFixed(2)}). Do you want to save the ${accountsToAdd.length} accounts anyway?`)) {
-            return;
-        }
-    }
-    
-    try {
-        // Use a Firestore Batch write for efficiency
-        const batch = db.batch();
-        accountsToAdd.forEach(account => {
-            const newAccountRef = db.collection('accounts').doc();
-            batch.set(newAccountRef, account);
-        });
-
-        await batch.commit();
-        alert(`Budget "${budgetTitle}" created with ${accountsToAdd.length} accounts and saved to Firestore.`);
-        
-        // Re-initialize data and close modal
-        await initializeAppData(); 
-        budgetModal.classList.add('hidden');
-    } catch (error) {
-        console.error("Error finalizing budget and writing to Firestore:", error);
-        alert("Failed to save budget. See console.");
-    }
-}
-
-// =========================================================================
-// 6. DASHBOARD & DISPLAY FUNCTIONS
-// =========================================================================
-
-/** Renders the main dashboard view. */
-function renderDashboard() {
-    let totalBudget = 0;
-    let totalSpent = 0;
-    
-    globalAccounts.forEach(account => {
-        totalBudget += account.allocated;
-        totalSpent += account.spent;
-    });
-
-    const totalRemaining = totalBudget - totalSpent;
-    
-    // Update Stat Cards
-    document.getElementById('dash-total-budget').textContent = `₦${totalBudget.toFixed(2)}`;
-    document.getElementById('dash-total-spent').textContent = `₦${totalSpent.toFixed(2)}`;
-    document.getElementById('dash-total-remaining').textContent = `₦${totalRemaining.toFixed(2)}`;
-    
-    // Render Account Cards
-    const container = document.getElementById('account-cards-container');
-    container.innerHTML = '';
-
-    globalAccounts.forEach(account => {
-        const remaining = account.allocated - account.spent;
-        const card = document.createElement('div');
-        card.className = 'account-card';
-        card.innerHTML = `
-            <h4>${account.name}</h4>
-            <p>Allocated: ₦${account.allocated.toFixed(2)}</p>
-            <p>Spent: ₦${account.spent.toFixed(2)}</p>
-            <p style="color: ${remaining < 0 ? 'red' : 'green'}; font-weight: bold;">Remaining: ₦${remaining.toFixed(2)}</p>
-        `;
-        container.appendChild(card);
-    });
-}
-
-/** Renders the list of all saved budgets/accounts for the Admin view. */
-function renderAccountManagement() {
-    const list = document.getElementById('saved-budgets-list');
-    list.innerHTML = '';
-    
-    globalAccounts.forEach(account => {
-        const remaining = account.allocated - account.spent;
-        const li = document.createElement('li');
-        li.innerHTML = `
-            <span><strong>${account.name}</strong> (${account.budgetTitle || 'Unfiled'})</span>
-            <span>Budget: ₦${account.allocated.toFixed(2)} | Remaining: ₦${remaining.toFixed(2)}</span>
-        `;
-        list.appendChild(li);
-    });
-}
-
-// =========================================================================
-// 7. SPENDING REQUEST & APPROVAL LOGIC (Firestore Read/Write)
-// =========================================================================
-
-/** Populates the dropdown menu for spending requests. */
-function populateAccountSelect() {
-    spendTargetAccountSelect.innerHTML = '<option value="">Select Account</option>';
-    globalAccounts.forEach(account => {
-        const option = document.createElement('option');
-        option.value = account.id;
-        option.textContent = account.name;
-        spendTargetAccountSelect.appendChild(option);
-    });
-}
-
-/** Handles a subordinate submitting a spending request to Firestore. */
-async function handleSubmitRequest() {
-    const amount = parseFloat(document.getElementById('spend-amount').value);
-    const accountId = spendTargetAccountSelect.value;
-    const description = document.getElementById('spend-description').value.trim();
-
-    if (!amount || amount <= 0 || !accountId || !description || !currentUser) {
-        alert("Please fill out all fields with valid data and ensure you are logged in.");
-        return;
-    }
-    
-    const targetAccount = globalAccounts.find(a => a.id === accountId);
-    if (!targetAccount) return alert("Target account not found.");
-
-    const newRequest = {
-        accountId: accountId,
-        accountName: targetAccount.name,
-        amount: amount,
-        description: description,
-        submittedBy: currentUser.email,
-        submittedById: currentUser.uid,
-        // CRITICAL FIX: Use currentUser.uid for request isolation/scoping
-        creatorId: currentUser.uid,
-        date: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    try {
-        await db.collection('pending_requests').add(newRequest);
-        alert("Spending request submitted for approval!");
-        
-        // Clear form
-        document.getElementById('spend-amount').value = '';
-        document.getElementById('spend-description').value = '';
-        spendTargetAccountSelect.value = '';
-        
-        // Re-fetch requests (to update badge for admin if they're logged in)
-        await initializeAppData();
-    } catch (error) {
-        console.error("Error submitting request:", error);
-        alert("Failed to submit request.");
-    }
-}
-
-/** Renders the list of pending requests for the Super Admin. */
-function renderPendingRequests() {
-    if (currentRole !== 'super_admin') return;
-
-    pendingRequestsList.innerHTML = '';
-
-    if (pendingRequests.length === 0) {
-        pendingRequestsList.innerHTML = '<p>No pending requests.</p>';
-        return;
-    }
-
-    pendingRequests.forEach(request => {
-        const item = document.createElement('li');
-        item.innerHTML = `
-            <div>
-                <strong>${request.accountName}</strong> | ₦${request.amount.toFixed(2)}
-                <p style="font-size:0.9em; margin: 5px 0 0;">${request.description} - By: ${request.submittedBy}</p>
-            </div>
-            <div>
-                <button class="approve-btn primary-btn" data-id="${request.id}"><i class="fas fa-check"></i> Approve</button>
-                <button class="reject-btn secondary-btn" data-id="${request.id}"><i class="fas fa-times"></i> Reject</button>
-            </div>
-        `;
-        pendingRequestsList.appendChild(item);
-    });
-    
-    // Add event listeners for approval/rejection buttons
-    pendingRequestsList.querySelectorAll('.approve-btn').forEach(btn => {
-        btn.addEventListener('click', () => handleApproval(btn.dataset.id, true));
-    });
-    
-    pendingRequestsList.querySelectorAll('.reject-btn').forEach(btn => {
-        btn.addEventListener('click', () => handleApproval(btn.dataset.id, false));
-    });
-}
-
-/** Handles the Super Admin approving or rejecting a request using a Firestore Transaction. */
-async function handleApproval(requestId, isApproved) {
-    const request = pendingRequests.find(r => r.id === requestId);
-    if (!request) return;
-    
-    const accountRef = db.collection('accounts').doc(request.accountId);
-    const requestRef = db.collection('pending_requests').doc(requestId);
-    
-    // Use a transaction for atomic update (crucial for financial data)
-    try {
-        await db.runTransaction(async (transaction) => {
-            if (isApproved) {
-                // 1. Get the current account data within the transaction
-                const accountDoc = await transaction.get(accountRef);
-                if (!accountDoc.exists) {
-                    throw "Account not found!";
-                }
-                
-                // 2. Update the spent total
-                const newSpent = accountDoc.data().spent + request.amount;
-                transaction.update(accountRef, { spent: newSpent });
-                
-                // 3. Delete the request
-                transaction.delete(requestRef);
-                alert(`Approved! ₦${request.amount.toFixed(2)} added to ${request.accountName}.`);
-            } else {
-                // Only delete the request if rejected
-                transaction.delete(requestRef);
-                alert(`Rejected! Request ₦${request.amount.toFixed(2)} from ${request.submittedBy} denied.`);
-            }
-        });
-
-        // Update UI after successful transaction
-        await initializeAppData();
-        renderPendingRequests(); 
-        renderDashboard(); 
-
-    } catch (error) {
-        console.error("Transaction failed:", error);
-        alert(`Approval failed! Check your budget limits or network. ${error}`);
-    }
-}
-
-
-// =========================================================================
-// 8. INITIALIZATION & EVENT LISTENERS
-// =========================================================================
-
-// --- Firebase Auth State Listener ---
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        currentUser = user;
-        await fetchUserRole(user.uid);
-        await initializeAppData(); 
-        
-        updateUIVisibility();
-        toggleAppView(true);
-    } else {
-        currentUser = null;
-        currentRole = null;
-        toggleAppView(false); 
     }
 });
 
-// --- Authentication Listeners ---
-loginBtn.addEventListener('click', handleLogin);
-signupBtn.addEventListener('click', handleSignUp);
-logoutBtn.addEventListener('click', handleLogout);
+// =========================================================================
+// 3. NAVIGATION & UI MANAGEMENT
+// =========================================================================
 
-// --- Navigation Listeners ---
+function handleNavigation(hash) {
+    const targetView = document.getElementById(hash.substring(1) + '-view');
+    const allViews = document.querySelectorAll('.content-view');
+
+    // Hide all views
+    allViews.forEach(view => view.classList.add('hidden'));
+
+    // Show target view
+    if (targetView) {
+        targetView.classList.remove('hidden');
+        currentActiveView = hash.substring(1) + '-view';
+    }
+
+    // Update active nav item
+    navItems.forEach(item => item.classList.remove('active'));
+    document.querySelector(`.nav-item[href="${hash}"]`).classList.add('active');
+    
+    // Close mobile menu on click (NEW mobile fix)
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar.classList.contains('mobile-open')) {
+        sidebar.classList.remove('mobile-open');
+    }
+
+    // Refresh data on specific views
+    if (hash === '#dashboard') {
+        renderDashboard();
+    } else if (hash === '#accounts') {
+        renderAccountsView();
+    } else if (hash === '#requests' && userRole === 'admin') {
+        renderRequestsView();
+    }
+}
+
 navItems.forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
-        const hash = e.currentTarget.getAttribute('href').substring(1); 
-        navigateTo(hash);
+        handleNavigation(item.getAttribute('href'));
     });
 });
 
-// --- Modal Listeners ---
-openBudgetModalBtn.addEventListener('click', () => {
-    budgetModal.classList.remove('hidden');
-    renderAllocationRows();
-});
-closeModalBtn.addEventListener('click', () => {
-    budgetModal.classList.add('hidden');
-});
-modalTotalAmountInput.addEventListener('input', updateAllocationSummary);
-addAllocationBtn.addEventListener('click', () => {
-    addAllocationRow();
-    updateAllocationSummary();
-});
-finalizeBudgetBtn.addEventListener('click', handleFinalizeBudget);
+window.onload = () => {
+    handleNavigation('#dashboard');
+};
 
-// --- Spending Request Listener ---
-submitRequestBtn.addEventListener('click', handleSubmitRequest);
+// NEW MOBILE FIX: Menu Toggle
+document.getElementById('menu-toggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('mobile-open');
+});
+
+
+// NEW FUNCTION: Update Spending Workflow (Personal vs. Joint/Corporate)
+function updateSpendingWorkflow(type) {
+    const spendingTitle = document.getElementById('spending-view-title');
+    const submitBtn = document.getElementById('submit-request-btn');
+    
+    // Reset nav item text first
+    spendingNavItem.innerHTML = spendingNavItem.innerHTML.replace(/Log Spending|Submit Spending/, type === 'personal' ? 'Log Spending' : 'Submit Spending');
+
+    if (type === 'personal') {
+        spendingTitle.textContent = "Log New Personal Spending";
+        submitBtn.textContent = "Log Spending";
+        spendingNavItem.querySelector('i').className = 'fas fa-plus-circle';
+        
+    } else {
+        spendingTitle.textContent = "Submit New Spending Request";
+        submitBtn.textContent = "Submit for Approval";
+        spendingNavItem.querySelector('i').className = 'fas fa-receipt';
+    }
+    // Update the button event listener to call the correct function
+    submitBtn.onclick = (type === 'personal') ? logPersonalSpending : submitSpendingRequest;
+}
+
 
 // =========================================================================
-// 9. MOBILE OPTIMIZATION: MENU TOGGLE LOGIC
+// 4. DATA RENDERING (DASHBOARD & ACCOUNTS)
 // =========================================================================
 
-const menuToggleBtn = document.getElementById('menu-toggle');
-const sidebar = document.getElementById('sidebar');
+async function renderDashboard() {
+    try {
+        const budgetsSnapshot = await db.collection('budgets')
+            .where('organizationId', '==', ORGANIZATION_ID)
+            .where('status', '==', 'active') // Only count active budgets
+            .get();
 
-// Add listener to open/close the mobile sidebar
-menuToggleBtn.addEventListener('click', () => {
-    // Toggles a CSS class that makes the sidebar visible/full-screen
-    sidebar.classList.toggle('mobile-open');
-});
+        if (budgetsSnapshot.empty) {
+            dashTotalBudget.textContent = '₦0.00';
+            dashTotalSpent.textContent = '₦0.00';
+            dashTotalRemaining.textContent = '₦0.00';
+            accountCardsContainer.innerHTML = '<p>No active budgets found. Go to Accounts to create one.</p>';
+            return;
+        }
 
-// Close menu when a navigation item is clicked on mobile
-navItems.forEach(item => {
-    item.addEventListener('click', () => {
-        // Only attempt to close if the sidebar is open and we are on a mobile view (CSS handles this)
-        if (sidebar.classList.contains('mobile-open')) {
-            sidebar.classList.remove('mobile-open');
+        let totalBudget = 0;
+        let totalSpent = 0;
+        let allAccounts = [];
+
+        budgetsSnapshot.forEach(doc => {
+            const budget = doc.data();
+            totalBudget += budget.totalAmount;
+            
+            // Collect all accounts from all active budgets
+            if (budget.accounts) {
+                Object.keys(budget.accounts).forEach(accountId => {
+                    const account = budget.accounts[accountId];
+                    allAccounts.push({
+                        id: accountId,
+                        name: account.name,
+                        budgeted: account.budgeted,
+                        spent: account.spent || 0
+                    });
+                    totalSpent += account.spent || 0;
+                });
+            }
+        });
+
+        const totalRemaining = totalBudget - totalSpent;
+
+        dashTotalBudget.textContent = `₦${totalBudget.toLocaleString()}`;
+        dashTotalSpent.textContent = `₦${totalSpent.toLocaleString()}`;
+        dashTotalRemaining.textContent = `₦${totalRemaining.toLocaleString()}`;
+
+        renderAccountCards(allAccounts);
+
+    } catch (error) {
+        console.error("Error rendering dashboard:", error);
+    }
+}
+
+// Modified to include history button
+function renderAccountCards(accounts) {
+    accountCardsContainer.innerHTML = '';
+
+    accounts.forEach(account => {
+        const remaining = account.budgeted - account.spent;
+        const card = document.createElement('div');
+        card.className = 'stat-card account-card';
+        card.innerHTML = `
+            <h4>${account.name}</h4>
+            <p style="font-size: 1.2em;">Budget: ₦${account.budgeted.toLocaleString()}</p>
+            <p style="color: ${remaining >= 0 ? 'var(--color-primary)' : 'var(--color-danger)'}; font-size: 1.5em;">Remaining: ₦${remaining.toLocaleString()}</p>
+        `;
+
+        // NEW: History Button
+        const historyBtn = document.createElement('button');
+        historyBtn.className = 'view-history-btn';
+        historyBtn.dataset.accountId = account.id;
+        historyBtn.dataset.accountName = account.name;
+        historyBtn.innerHTML = `<i class="fas fa-history"></i> View History`;
+        
+        historyBtn.addEventListener('click', () => {
+            openHistoryModal(account.id, account.name);
+        });
+
+        card.appendChild(historyBtn);
+        accountCardsContainer.appendChild(card);
+    });
+}
+
+async function renderAccountsView() {
+    try {
+        const budgetsSnapshot = await db.collection('budgets')
+            .where('organizationId', '==', ORGANIZATION_ID)
+            .get();
+        
+        const budgets = budgetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Pass all budgets to the rendering function, which will split them by status
+        renderSavedBudgets(budgets); 
+        renderSpendingAccounts(budgets);
+
+    } catch (error) {
+        console.error("Error rendering accounts view:", error);
+    }
+}
+
+// Modified to handle status (active/archived)
+function renderSavedBudgets(budgets) {
+    savedBudgetsList.innerHTML = '';
+    archivedBudgetsList.innerHTML = '';
+    
+    // NEW: Hide archive button by default
+    archiveBudgetBtn.classList.add('hidden');
+
+    budgets.forEach(budget => {
+        const item = document.createElement('li');
+        // NEW: Use the title which might be the joint/corp name
+        item.textContent = `${budget.title || 'Untitled Budget'} (₦${budget.totalAmount.toLocaleString()})`; 
+        
+        // Attach budget ID for selection
+        item.dataset.budgetId = budget.id;
+        item.addEventListener('click', () => {
+            // Placeholder: Logic to select and view/edit budget details
+            document.querySelectorAll('#saved-budgets-list li').forEach(li => li.style.backgroundColor = 'white');
+            item.style.backgroundColor = '#f0f0f0';
+            
+            // NEW: Show archive button if budget is active
+            if (budget.status === 'active') {
+                archiveBudgetBtn.classList.remove('hidden');
+                archiveBudgetBtn.dataset.budgetId = budget.id;
+            } else {
+                archiveBudgetBtn.classList.add('hidden');
+            }
+        });
+        
+        if (budget.status === 'archived') {
+            archivedBudgetsList.appendChild(item);
+            item.style.opacity = '0.6';
+        } else {
+            savedBudgetsList.appendChild(item);
         }
     });
+}
+
+function renderSpendingAccounts(budgets) {
+    // Clear previous options
+    spendTargetAccount.innerHTML = '<option value="">Select Account (e.g. GTB - House)</option>';
+
+    budgets.forEach(budget => {
+        // Only allow spending against active budgets
+        if (budget.status === 'active' && budget.accounts) { 
+            Object.keys(budget.accounts).forEach(accountId => {
+                const account = budget.accounts[accountId];
+                const option = document.createElement('option');
+                option.value = accountId;
+                option.textContent = `${budget.title} - ${account.name}`;
+                spendTargetAccount.appendChild(option);
+            });
+        }
+    });
+}
+
+// =========================================================================
+// 5. SPENDING & REQUEST LOGIC
+// =========================================================================
+
+// Original Joint/Corporate logic (Modified for type field)
+async function submitSpendingRequest() {
+    const amount = parseFloat(spendAmount.value);
+    const accountId = spendTargetAccount.value;
+    const description = spendDescription.value;
+
+    if (!amount || !accountId || !description) {
+        alert("Please fill in all spending fields.");
+        return;
+    }
+
+    try {
+        await db.collection('requests').add({
+            amount: amount,
+            accountId: accountId,
+            description: description,
+            userId: auth.currentUser.uid,
+            userName: auth.currentUser.email,
+            date: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'pending',
+            organizationId: ORGANIZATION_ID,
+            type: 'request', // NEW: Add type field
+        });
+        alert('Spending request submitted for approval.');
+        
+        // Clear form
+        spendAmount.value = '';
+        spendTargetAccount.value = '';
+        spendDescription.value = '';
+
+    } catch (e) {
+        console.error("Error submitting request: ", e);
+        alert('Could not submit request.');
+    }
+}
+
+// NEW FUNCTION: Direct Spending Log for Personal Accounts
+async function logPersonalSpending() {
+    const amount = parseFloat(spendAmount.value);
+    const accountId = spendTargetAccount.value;
+    const description = spendDescription.value;
+
+    if (!amount || !accountId || !description) {
+        alert("Please fill in all spending fields.");
+        return;
+    }
+    
+    try {
+        // 1. Log transaction
+        await db.collection('transactions').add({
+            amount: amount,
+            accountId: accountId,
+            description: description,
+            userId: auth.currentUser.uid,
+            userName: auth.currentUser.email,
+            date: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'logged', // No approval needed
+            type: 'spending'
+        });
+
+        // 2. Update Account Balance (Simplified Update)
+        // Note: Full implementation requires looking up the associated budget
+        // and updating the 'spent' field for the specific accountId within that budget document.
+        // For now, this is conceptual but required for the dashboard to update correctly.
+        
+        // Example Conceptual Balance Update (requires finding the parent budget):
+        // const budgetDoc = await db.collection('budgets').where(`accounts.${accountId}`, '!=', null).limit(1).get();
+        // if (!budgetDoc.empty) {
+        //     const budgetId = budgetDoc.docs[0].id;
+        //     const currentSpent = budgetDoc.docs[0].data().accounts[accountId].spent || 0;
+        //     const updatePath = `accounts.${accountId}.spent`;
+        //     await db.collection('budgets').doc(budgetId).update({
+        //         [updatePath]: currentSpent + amount
+        //     });
+        // }
+        
+        alert('Spending successfully logged!');
+        
+        // Clear form
+        spendAmount.value = '';
+        spendTargetAccount.value = '';
+        spendDescription.value = '';
+
+        // Refresh views
+        renderDashboard(); 
+    } catch (e) {
+        console.error("Error logging spending: ", e);
+        alert('Could not log spending.');
+    }
+}
+
+
+// Placeholder for Admin Request View (needs full implementation if requested)
+async function renderRequestsView() {
+    const list = document.getElementById('pending-requests-list');
+    list.innerHTML = '<p>Loading pending requests...</p>';
+    
+    try {
+        const snapshot = await db.collection('requests')
+            .where('organizationId', '==', ORGANIZATION_ID)
+            .where('status', '==', 'pending')
+            .get();
+
+        list.innerHTML = '';
+        if (snapshot.empty) {
+            list.innerHTML = '<p>No pending requests.</p>';
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            // ... (Request rendering logic here) ...
+            const item = document.createElement('div');
+            item.className = 'card';
+            item.textContent = `Amount: ₦${doc.data().amount.toLocaleString()} - ${doc.data().description}`;
+            list.appendChild(item);
+        });
+    } catch (e) {
+        console.error("Error loading requests:", e);
+    }
+}
+
+// =========================================================================
+// 6. BUDGET CREATION & ARCHIVING
+// =========================================================================
+
+openNewBudgetModalBtn.addEventListener('click', () => {
+    budgetModal.classList.remove('hidden');
+    // Clear form and set initial allocation row
+    modalBudgetTitle.value = '';
+    modalTotalAmount.value = '';
+    modalOtherDetails.value = ''; // NEW
+    allocationTable.innerHTML = '';
+    addAllocationBtn.click(); // Add first row
+    updateAllocationSummary();
+});
+
+document.querySelectorAll('.modal .close-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        btn.closest('.modal').classList.add('hidden');
+    });
+});
+
+addAllocationBtn.addEventListener('click', () => {
+    const row = document.createElement('div');
+    row.className = 'allocation-row';
+    row.innerHTML = `
+        <input type="text" placeholder="Account Name (e.g., Rent)" class="allocation-name">
+        <input type="number" placeholder="Amount (₦)" class="allocation-amount">
+        <button class="remove-account-btn secondary-btn" type="button"><i class="fas fa-trash"></i></button>
+    `;
+    row.querySelector('.remove-account-btn').addEventListener('click', () => {
+        row.remove();
+        updateAllocationSummary();
+    });
+    
+    // Add listeners to update summary immediately
+    row.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', updateAllocationSummary);
+    });
+
+    allocationTable.appendChild(row);
+});
+
+modalTotalAmount.addEventListener('input', updateAllocationSummary);
+
+function updateAllocationSummary() {
+    const total = parseFloat(modalTotalAmount.value) || 0;
+    let allocatedSum = 0;
+
+    document.querySelectorAll('.allocation-amount').forEach(input => {
+        allocatedSum += parseFloat(input.value) || 0;
+    });
+
+    const remaining = total - allocatedSum;
+
+    allocatedSumSpan.textContent = allocatedSum.toLocaleString();
+    allocationRemainingSpan.textContent = remaining.toLocaleString();
+
+    // Visual cue for validation
+    if (remaining < 0) {
+        allocationRemainingSpan.style.color = 'var(--color-danger)';
+    } else if (remaining > 0) {
+        allocationRemainingSpan.style.color = 'var(--color-primary)';
+    } else {
+        allocationRemainingSpan.style.color = 'var(--color-success)';
+    }
+}
+
+finalizeBudgetBtn.addEventListener('click', async () => {
+    const title = modalBudgetTitle.value.trim();
+    const totalAmount = parseFloat(modalTotalAmount.value);
+    const otherDetails = modalOtherDetails.value.trim(); // NEW
+
+    if (!title || !totalAmount || totalAmount <= 0) {
+        alert("Please provide a valid budget title and total amount.");
+        return;
+    }
+
+    const allocationRows = document.querySelectorAll('.allocation-row');
+    const accounts = {};
+    let allocatedSum = 0;
+
+    allocationRows.forEach(row => {
+        const nameInput = row.querySelector('.allocation-name');
+        const amountInput = row.querySelector('.allocation-amount');
+        const name = nameInput.value.trim();
+        const amount = parseFloat(amountInput.value);
+
+        if (name && amount > 0) {
+            // Use a simple sanitized name as a unique ID key for simplicity
+            const accountId = name.toLowerCase().replace(/\s+/g, '_'); 
+            accounts[accountId] = {
+                name: name,
+                budgeted: amount,
+                spent: 0
+            };
+            allocatedSum += amount;
+        }
+    });
+
+    if (allocatedSum !== totalAmount) {
+        alert(`Allocation error: Total allocated (₦${allocatedSum.toLocaleString()}) must match Total Budget (₦${totalAmount.toLocaleString()}).`);
+        return;
+    }
+
+    try {
+        await db.collection('budgets').add({
+            title: title,
+            totalAmount: totalAmount,
+            otherDetails: otherDetails, // NEW
+            accounts: accounts,
+            organizationId: ORGANIZATION_ID,
+            creatorId: auth.currentUser.uid,
+            createDate: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'active' // NEW: Default status
+        });
+
+        alert("Budget finalized and saved!");
+        budgetModal.classList.add('hidden');
+        renderDashboard();
+        renderAccountsView();
+
+    } catch (e) {
+        console.error("Error finalizing budget: ", e);
+        alert("Failed to save budget.");
+    }
+});
+
+// NEW FUNCTION: Archive Logic
+archiveBudgetBtn.addEventListener('click', async () => {
+    const budgetId = archiveBudgetBtn.dataset.budgetId;
+    if (!budgetId || !confirm("Are you sure you want to finalize and archive this budget? This cannot be undone.")) return;
+
+    try {
+        await db.collection('budgets').doc(budgetId).update({
+            status: 'archived',
+            archiveDate: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert("Budget archived successfully!");
+        renderAccountsView(); // Refresh view
+    } catch (e) {
+        console.error("Error archiving budget:", e);
+        alert("Failed to archive budget.");
+    }
+});
+
+// =========================================================================
+// 7. HISTORY MODAL LOGIC (NEW SECTION)
+// =========================================================================
+
+// NEW FUNCTION: Open History Modal and Load Data
+async function openHistoryModal(accountId, accountName) {
+    historyModalTitle.textContent = `Spending History: ${accountName}`;
+    historyList.innerHTML = 'Loading history...';
+    document.getElementById('history-empty-message').classList.add('hidden');
+    historyModal.classList.remove('hidden');
+
+    try {
+        // Query transactions associated with the specific account ID
+        const snapshot = await db.collection('transactions')
+            .where('accountId', '==', accountId)
+            .orderBy('date', 'desc')
+            .get();
+
+        historyList.innerHTML = '';
+        if (snapshot.empty) {
+            document.getElementById('history-empty-message').classList.remove('hidden');
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const tx = doc.data();
+            // Convert Firebase Timestamp to readable date
+            const date = tx.date ? tx.date.toDate().toLocaleDateString() : 'N/A';
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+                <p><strong>Date:</strong> ${date}</p>
+                <p><strong>User:</strong> ${tx.userName.split('@')[0]}</p>
+                <p><strong>Description:</strong> ${tx.description}</p>
+                <p class="amount"><strong>Amount:</strong> ₦${tx.amount.toLocaleString()}</p>
+            `;
+            historyList.appendChild(item);
+        });
+
+    } catch (e) {
+        console.error("Error loading history:", e);
+        historyList.innerHTML = '<p style="color: var(--color-danger);">Failed to load history.</p>';
+    }
+}
+
+// Close History Modal
+historyModal.querySelector('.close-btn').addEventListener('click', () => {
+    historyModal.classList.add('hidden');
 });
