@@ -24,7 +24,7 @@ body {
 }
 
 /* -------------------------------------- */
-/* 1. AUTH SCREEN STYLES (Unchanged) */
+/* 1. AUTH SCREEN STYLES */
 /* -------------------------------------- */
 
 #auth-screen {
@@ -32,7 +32,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: var(--color-dark); /* Dark background for login screen */
+    background: var(--color-dark);
 }
 
 .auth-card {
@@ -55,6 +55,28 @@ body {
     padding: 12px;
     margin-bottom: 15px;
 }
+
+/* NEW: Account Type Selection Styling */
+.account-type-selection {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    font-size: 0.95em;
+    color: var(--color-dark);
+}
+.account-type-selection label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-weight: normal;
+}
+.account-type-selection input[type="radio"] {
+    width: auto;
+    margin: 0;
+}
+/* END NEW */
+
 
 .primary-btn, .secondary-btn {
     width: 100%;
@@ -88,7 +110,7 @@ body {
     display: flex;
     flex-direction: column; /* Stacked layout by default (mobile) */
     min-height: 100vh;
-    padding: 0; /* Remove padding from container */
+    padding: 0;
 }
 
 /* --- MOBILE HEADER (Visible by default) --- */
@@ -100,7 +122,7 @@ body {
     background-color: var(--color-dark);
     color: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 50; /* Ensure it stays above content */
+    z-index: 50;
 }
 
 #menu-toggle {
@@ -110,12 +132,11 @@ body {
     font-size: 24px;
     cursor: pointer;
     padding: 5px;
-    touch-action: manipulation; /* Good practice for mobile touch targets */
+    touch-action: manipulation;
 }
 
 /* --- MOBILE SIDEBAR (Hidden/Collapsible Menu) --- */
 #sidebar {
-    /* Full-screen overlay setup for mobile menu */
     position: fixed;
     top: 0;
     left: 0;
@@ -125,17 +146,15 @@ body {
     color: white;
     display: flex;
     flex-direction: column;
-    z-index: 1000; /* Must be above everything else */
+    z-index: 1000;
     
-    /* Initially hidden off-screen */
     transform: translateX(-100%); 
     transition: transform 0.3s ease-out;
     
-    /* Adjust padding to account for the fixed header */
-    padding-top: 60px; /* Assuming header height is around 50-60px */
+    padding-top: 60px; 
 }
 
-/* This FIX hides the logo area that is inside the sidebar on mobile */
+/* FIX: Hide the logo area inside the sidebar for the mobile view (since #mobile-header has its own logo) */
 #sidebar .logo-area {
     display: none;
 }
@@ -145,15 +164,7 @@ body {
     transform: translateX(0);
 }
 
-.logo-area {
-    /* Adjustments for logo inside the full-screen menu */
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    margin-bottom: 30px;
-    height: 50px; /* Give it a fixed height */
-}
-
+/* General sidebar styles (when open) */
 .sidebar-logo {
     width: 32px;
     height: 32px;
@@ -221,12 +232,12 @@ body {
 /* MAIN CONTENT STYLES (Adjusted for mobile padding) */
 #main-content {
     flex-grow: 1;
-    padding: 20px 15px; /* Reduced side padding for mobile */
+    padding: 20px 15px;
     overflow-y: auto;
 }
 
 .content-view {
-    padding: 0; /* Remove extra padding here */
+    padding: 0;
 }
 
 /* -------------------------------------- */
@@ -236,7 +247,7 @@ body {
 /* General Card and Form Styles (Adjusted for mobile touch targets) */
 .card, .form-card, .stat-card {
     background: white;
-    padding: 20px; /* Slight reduction for mobile */
+    padding: 20px;
     margin-bottom: 15px;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -251,11 +262,11 @@ label {
 
 input, textarea, select {
     width: 100%;
-    padding: 12px; /* Increased padding for better touch targeting */
+    padding: 12px;
     border: 1px solid #ddd;
     border-radius: 5px;
     transition: border-color 0.2s;
-    min-height: 44px; /* Android accessibility standard for touch targets */
+    min-height: 44px;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -266,9 +277,8 @@ input:focus, textarea:focus, select:focus {
 /* Dashboard Grid (Stacked for Mobile by default) */
 .stats-grid {
     display: grid;
-    /* On mobile, they stack vertically (1 column) */
     grid-template-columns: 1fr; 
-    gap: 15px; /* Reduced gap */
+    gap: 15px;
     margin-bottom: 20px;
 }
 
@@ -278,7 +288,7 @@ input:focus, textarea:focus, select:focus {
     color: #888;
 }
 .stat-card p {
-    font-size: 1.6em; /* Slightly smaller for mobile */
+    font-size: 1.6em;
     font-weight: bold;
     margin: 5px 0 0;
 }
@@ -286,7 +296,7 @@ input:focus, textarea:focus, select:focus {
 /* Account Cards (Stacked for Mobile by default) */
 #account-cards-container {
     display: grid;
-    grid-template-columns: 1fr; /* Stacked columns for mobile */
+    grid-template-columns: 1fr;
     gap: 15px;
 }
 
@@ -294,7 +304,28 @@ input:focus, textarea:focus, select:focus {
     padding: 15px;
     background: #eef;
     border-left: 5px solid var(--color-primary);
+    /* NEW: Flex layout for better button alignment */
+    display: flex; 
+    flex-direction: column;
+    gap: 10px;
 }
+
+/* NEW: History Button Style */
+.view-history-btn {
+    background: var(--color-secondary);
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-top: 5px;
+    align-self: flex-start; /* Align to the left in the column */
+}
+.view-history-btn i {
+    margin-right: 5px;
+}
+/* END NEW */
 
 /* List/Item Styles (for saved budgets and spending lists) */
 ul {
@@ -305,24 +336,22 @@ ul {
 ul li {
     background: #fff;
     border: 1px solid #eee;
-    padding: 12px 15px; /* Increased padding */
+    padding: 12px 15px;
     margin-bottom: 8px;
     border-radius: 6px;
     display: flex;
-    flex-direction: column; /* Stack details vertically on mobile */
+    flex-direction: column;
     align-items: flex-start;
     gap: 5px;
     transition: box-shadow 0.2s;
 }
 
-/* Spending Request Buttons on list items */
 #pending-requests-list li {
     flex-direction: column;
     align-items: flex-start;
 }
 
 #pending-requests-list li > div:last-child {
-    /* Container for the approve/reject buttons */
     margin-top: 10px;
     display: flex;
     gap: 10px;
@@ -334,15 +363,22 @@ ul li {
 /* -------------------------------------- */
 
 .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Aligned for full screen takeover */
     z-index: 1000;
-    /* On mobile, modals should feel like a screen takeover */
-    align-items: flex-start; 
 }
 
 .modal-content {
     background: white;
     padding: 20px;
-    border-radius: 0; /* Remove border-radius for full-screen feel */
+    border-radius: 0;
     width: 100%;
     max-width: 100%;
     min-height: 100vh;
@@ -350,22 +386,56 @@ ul li {
     margin: 0;
 }
 
-/* Allocation Table/Rows - use flex-wrap if needed, but horizontal scroll often better */
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #aaa;
+}
+
+/* History List inside Modal */
+#history-list .history-item {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+}
+#history-list .history-item:last-child {
+    border-bottom: none;
+}
+.history-item p {
+    margin: 3px 0;
+    font-size: 0.95em;
+}
+.history-item .amount {
+    font-weight: bold;
+    color: var(--color-danger);
+}
+
+/* Allocation Table/Rows */
+#allocation-table {
+    margin-top: 15px;
+    border: 1px solid #eee;
+    padding: 10px;
+    border-radius: 6px;
+}
+
 .allocation-row {
     display: flex;
-    flex-wrap: nowrap; /* Keep inputs in a single row */
+    flex-wrap: nowrap;
     gap: 8px;
     margin-bottom: 10px;
     align-items: center;
 }
 
 .allocation-row input {
-    flex-basis: 45%; /* Give inputs more space */
+    flex-basis: 45%;
     min-width: 0;
 }
 
 .allocation-row .remove-account-btn {
-    min-width: 44px; /* Ensure good touch size */
+    background: var(--color-danger);
+    min-width: 44px;
     min-height: 44px;
     width: 44px;
     height: 44px;
@@ -373,6 +443,13 @@ ul li {
     padding: 0;
 }
 
+.budget-summary {
+    margin-top: 20px;
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    font-weight: bold;
+}
 
 /* Utility Class */
 .hidden {
@@ -409,6 +486,8 @@ ul li {
     /* FIX: Show the logo area that belongs to the sidebar on desktop */
     #sidebar .logo-area {
         display: flex; 
+        align-items: center;
+        padding: 0 20px;
         margin-bottom: 30px;
     }
 
@@ -426,6 +505,17 @@ ul li {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
     
+    /* Account Cards restore desktop layout */
+    .account-card {
+        flex-direction: column;
+        gap: 5px; /* Tighter spacing for desktop */
+    }
+
+    .view-history-btn {
+        margin-top: 10px;
+        align-self: stretch; /* Make button full width on desktop card */
+    }
+
     /* 4. MODAL STYLES (Desktop) */
     .modal-content {
         border-radius: 12px;
