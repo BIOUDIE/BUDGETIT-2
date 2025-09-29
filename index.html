@@ -126,9 +126,9 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <script>
         const firebaseConfig = {
@@ -141,14 +141,11 @@
             measurementId: "G-PBDQZB8VYK"
         };
 
-        // Initialize Firebase
+        // Initialize Firebase (v8 Syntax)
         const app = firebase.initializeApp(firebaseConfig);
-        // Note: For Firebase 9, we use getAuth() and getFirestore() if not using global imports.
-        // Since we used v9.6.1 global imports, we use firebase.auth() and firebase.firestore()
         const auth = firebase.auth();
         const db = firebase.firestore();
         
-        // Use a static ID for now, representing your organization/household
         const ORGANIZATION_ID = "main_budget_org_1"; 
     </script> 
 
