@@ -7,8 +7,8 @@ let currentUser = null; // Stores the logged-in Firebase User object
 let currentRole = null; // 'super_admin' or 'subordinate' (Stored in Firestore)
 
 // Budget Data Structure (These will hold data fetched from Firestore)
-let globalAccounts = []; 
-let pendingRequests = []; 
+let globalAccounts = [];
+let pendingRequests = [];
 
 // UI Elements (Main Layout)
 const authScreen = document.getElementById('auth-screen');
@@ -164,8 +164,6 @@ function handleLogout() {
     auth.signOut(); // onAuthStateChanged handles UI update
 }
 
-// Remove the static ORGANIZATION_ID and use the currentUser.uid
-
 // =========================================================================
 // 4. FIREBASE DATA MANAGEMENT (Initialization & Fetching)
 // =========================================================================
@@ -175,20 +173,14 @@ async function initializeAppData() {
     try {
         if (!currentUser) return; // Prevent fetching if user is null
 
-        // 1. Fetch Accounts/Splits relevant to the current user's UID
+        // 1. Fetch Accounts/Splits relevant to the current user's UID (Budget Isolation)
         const accountsSnapshot = await db.collection('accounts')
-                                          // Scope accounts by the creator's UID
-                                          .where('creatorId', '==', currentUser.uid) 
-                                          .get();
+                                         .where('creatorId', '==', currentUser.uid) 
+                                         .get();
         globalAccounts = accountsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // 2. Fetch Pending Requests (Requests submitted TO this user, if applicable)
+        // 2. Fetch Pending Requests (Requests scoped to the creator/admin)
         const requestsSnapshot = await db.collection('pending_requests')
-                                         // For now, requests are scoped to the Super Admin's UID for review.
-                                         // If we assume a multi-account system where a user approves their own, 
-                                         // this query needs to target requests where 'approverId' == currentUser.uid 
-                                         // For now, let's keep it simple: only the primary admin handles all. 
-                                         // To isolate budgets completely, we'll keep this one simple:
                                          .where('creatorId', '==', currentUser.uid) 
                                          .get();
         pendingRequests = requestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -202,26 +194,6 @@ async function initializeAppData() {
     }
 }
 
-
-// In handleFinalizeBudget(), ensure you save the creatorId
-// ... (inside the loop where accountsToAdd is built) ...
-            accountsToAdd.push({
-                // ... existing fields ...
-                // ADD THIS FIELD to link the budget to the user
-                creatorId: currentUser.uid, 
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-// ...
-
-// In handleSubmitRequest(), ensure you save the creatorId (or approverId if implemented)
-// ... (inside the newRequest object) ...
-    const newRequest = {
-        // ... existing fields ...
-        // ADD THIS FIELD
-        creatorId: currentUser.uid, 
-        // ...
-    }    
-}
 
 // =========================================================================
 // 5. BUDGET SPLITTING & ACCOUNT MANAGEMENT LOGIC (Firestore Write)
@@ -302,7 +274,8 @@ async function handleFinalizeBudget() {
                 allocated: amount,
                 spent: 0,
                 budgetTitle: budgetTitle,
-                organizationId: ORGANIZATION_ID,
+                // CRITICAL FIX: Use currentUser.uid for budget isolation
+                creatorId: currentUser.uid, 
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             allocatedSum += amount;
@@ -426,7 +399,8 @@ async function handleSubmitRequest() {
         description: description,
         submittedBy: currentUser.email,
         submittedById: currentUser.uid,
-        organizationId: ORGANIZATION_ID,
+        // CRITICAL FIX: Use currentUser.uid for request isolation/scoping
+        creatorId: currentUser.uid,
         date: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -578,7 +552,3 @@ finalizeBudgetBtn.addEventListener('click', handleFinalizeBudget);
 
 // --- Spending Request Listener ---
 submitRequestBtn.addEventListener('click', handleSubmitRequest);
-
-
-
-
