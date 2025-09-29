@@ -130,6 +130,31 @@
             <button id="finalize-budget-btn" class="primary-btn">Finalize & Save Budget</button>
         </div>
     </div>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
+    <script>
+        // Go to your Firebase Console -> Project Settings -> General
+        // Copy the "Firebase SDK snippet" for "Config" and paste it here.
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        // This makes the Firebase objects globally available in script.js
+    </script> 
 
     <script src="script.js"></script>
 </body>
