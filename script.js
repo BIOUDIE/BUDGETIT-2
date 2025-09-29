@@ -552,3 +552,26 @@ finalizeBudgetBtn.addEventListener('click', handleFinalizeBudget);
 
 // --- Spending Request Listener ---
 submitRequestBtn.addEventListener('click', handleSubmitRequest);
+
+// =========================================================================
+// 9. MOBILE OPTIMIZATION: MENU TOGGLE LOGIC
+// =========================================================================
+
+const menuToggleBtn = document.getElementById('menu-toggle');
+const sidebar = document.getElementById('sidebar');
+
+// Add listener to open/close the mobile sidebar
+menuToggleBtn.addEventListener('click', () => {
+    // Toggles a CSS class that makes the sidebar visible/full-screen
+    sidebar.classList.toggle('mobile-open');
+});
+
+// Close menu when a navigation item is clicked on mobile
+navItems.forEach(item => {
+    item.addEventListener('click', () => {
+        // Only attempt to close if the sidebar is open and we are on a mobile view (CSS handles this)
+        if (sidebar.classList.contains('mobile-open')) {
+            sidebar.classList.remove('mobile-open');
+        }
+    });
+});
