@@ -18,6 +18,9 @@
             <input type="password" id="auth-password" placeholder="Password">
             <button id="login-btn" class="primary-btn">Log In</button>
             <button id="signup-btn" class="secondary-btn">Sign Up</button>
+            <p style="margin-top: 15px; font-size: 0.9em;">
+                *Note: Password must be 6 characters minimum.
+            </p>
         </div>
     </div>
 
@@ -55,8 +58,7 @@
                     <div class="stat-card"><h3>Remaining</h3><p id="dash-total-remaining">₦0.00</p></div>
                 </div>
                 
-                <div id="account-cards-container">
-                    </div>
+                <div id="account-cards-container"></div>
             </section>
             
             <section id="accounts-view" class="content-view hidden">
@@ -65,8 +67,7 @@
                 
                 <div class="saved-budgets-list">
                     <h3>Saved Budgets</h3>
-                    <ul id="saved-budgets-list">
-                        </ul>
+                    <ul id="saved-budgets-list"></ul>
                 </div>
             </section>
             
@@ -79,7 +80,7 @@
                     <label for="spend-target-account">Target Account:</label>
                     <select id="spend-target-account">
                         <option value="">Select Account (e.g. GTB - House)</option>
-                        </select>
+                    </select>
 
                     <label for="spend-description">Description:</label>
                     <textarea id="spend-description" placeholder="Briefly describe the spending"></textarea>
@@ -90,13 +91,13 @@
             
             <section id="requests-view" class="content-view hidden">
                 <h2>Pending Spending Approvals</h2>
-                <div id="pending-requests-list">
-                    </div>
+                <div id="pending-requests-list"></div>
             </section>
             
             <section id="users-view" class="content-view hidden">
                 <h2>User Management</h2>
-                </section>
+                <p>User management tools will appear here.</p>
+            </section>
             
         </main>
         
@@ -114,13 +115,7 @@
             <input type="number" id="modal-total-amount" placeholder="Enter total amount">
             
             <h4>Allocate to Accounts</h4>
-            <div id="allocation-table">
-                <div class="allocation-row">
-                    <input type="text" class="account-name" placeholder="Account Name (e.g. GTB - House)">
-                    <input type="number" class="account-amount" placeholder="Amount (₦)">
-                    <button class="remove-account-btn"><i class="fas fa-times-circle"></i></button>
-                </div>
-            </div>
+            <div id="allocation-table"></div>
             <button id="add-allocation-btn" class="secondary-btn"><i class="fas fa-plus"></i> Add Account Split</button>
 
             <p class="budget-summary">
@@ -130,30 +125,31 @@
             <button id="finalize-budget-btn" class="primary-btn">Finalize & Save Budget</button>
         </div>
     </div>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
 
     <script>
-        // Go to your Firebase Console -> Project Settings -> General
-        // Copy the "Firebase SDK snippet" for "Config" and paste it here.
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyA7sc7abjG_zkvbHqh_N7rgLqVyGJOV9Wc",
+            authDomain: "elektrobudgetit.firebaseapp.com",
+            projectId: "elektrobudgetit",
+            storageBucket: "elektrobudgetit.firebasestorage.app",
+            messagingSenderId: "483786382013",
+            appId: "1:483786382013:web:23fd308d891c9f7ff835d4",
+            measurementId: "G-PBDQZB8VYK"
         };
 
         // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
+        // Note: For Firebase 9, we use getAuth() and getFirestore() if not using global imports.
+        // Since we used v9.6.1 global imports, we use firebase.auth() and firebase.firestore()
         const auth = firebase.auth();
         const db = firebase.firestore();
         
-        // This makes the Firebase objects globally available in script.js
+        // Use a static ID for now, representing your organization/household
+        const ORGANIZATION_ID = "main_budget_org_1"; 
     </script> 
 
     <script src="script.js"></script>
