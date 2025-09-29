@@ -116,6 +116,7 @@ logoutBtn.addEventListener('click', () => {
     auth.signOut();
 });
 
+// >>> START FIX FOR ADMIN PORTAL LOADING <<<
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         try {
@@ -125,8 +126,8 @@ auth.onAuthStateChanged(async (user) => {
                 userRole = userData.role;
                 userAccountType = userData.accountType || 'personal'; 
                 
-                // FIX 1.1: Restoring Admin Links for Corporate Accounts
-                if (userRole === 'admin') {
+                // FIX: Admin Links for Corporate Accounts (MUST check both role AND account type)
+                if (userRole === 'admin' && userAccountType === 'joint') {
                     adminLinks.classList.remove('hidden');
                     // listenForPendingRequests(); // Re-enable listener if you have it
                 } else {
@@ -155,6 +156,8 @@ auth.onAuthStateChanged(async (user) => {
         appContainer.classList.add('hidden');
     }
 });
+// >>> END FIX FOR ADMIN PORTAL LOADING <<<
+
 
 // =========================================================================
 // 3. NAVIGATION & UI MANAGEMENT
@@ -234,16 +237,12 @@ function updateSpendingWorkflow(type) {
 async function renderDashboard() {
     try {
         // FIX 2.0: Ensure all queries use ORGANIZATION_ID to isolate data per account type
-        // Corporate: ORGANIZATION_ID is 'main_budget_org_1'
-        // Personal: ORGANIZATION_ID is typically the user's UID to ensure isolation
         const orgIdentifier = (userAccountType === 'personal') ? auth.currentUser.uid : ORGANIZATION_ID;
 
         const budgetsSnapshot = await db.collection('budgets')
             .where('organizationId', '==', orgIdentifier)
             .where('status', '==', 'active')
             .get();
-
-        // ... (rest of dashboard logic remains the same, using budgetsSnapshot) ...
         
         if (budgetsSnapshot.empty) {
             dashTotalBudget.textContent = '₦0.00';
@@ -290,7 +289,6 @@ async function renderDashboard() {
 }
 
 function renderAccountCards(accounts) {
-    // ... (rest of renderAccountCards logic remains the same) ...
     accountCardsContainer.innerHTML = '';
 
     accounts.forEach(account => {
@@ -468,6 +466,7 @@ async function logPersonalSpending() {
 
 // ... (Modal logic remains the same) ...
 
+// >>> START FIX FOR BUDGET CREATION <<<
 finalizeBudgetBtn.addEventListener('click', async () => {
     const title = modalBudgetTitle.value.trim();
     const totalAmount = parseFloat(modalTotalAmount.value);
@@ -504,7 +503,7 @@ finalizeBudgetBtn.addEventListener('click', async () => {
         return;
     }
     
-    // FIX 2.0: Set Organization ID based on user type for isolation
+    // FIX: Set Organization ID based on user type for isolation (This fixes budget creation)
     const orgIdentifier = (userAccountType === 'personal') ? auth.currentUser.uid : ORGANIZATION_ID;
 
     try {
@@ -529,6 +528,7 @@ finalizeBudgetBtn.addEventListener('click', async () => {
         alert("Failed to save budget.");
     }
 });
+// >>> END FIX FOR BUDGET CREATION <<<
 
 // ... (Archive Logic remains the same) ...
 
@@ -582,4 +582,3 @@ async function openHistoryModal(accountId, accountName) {
 historyModal.querySelector('.close-btn').addEventListener('click', () => {
     historyModal.classList.add('hidden');
 });
-
