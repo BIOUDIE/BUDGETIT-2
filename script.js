@@ -166,6 +166,7 @@ function handleLogout() {
     auth.signOut(); // onAuthStateChanged handles UI update
 }
 
+// Remove the static ORGANIZATION_ID and use the currentUser.uid
 
 // =========================================================================
 // 4. FIREBASE DATA MANAGEMENT (Initialization & Fetching)
@@ -174,15 +175,23 @@ function handleLogout() {
 /** Loads data (Accounts and Requests) from Firestore after login. */
 async function initializeAppData() {
     try {
-        // 1. Fetch Accounts/Splits relevant to the organization
+        if (!currentUser) return; // Prevent fetching if user is null
+
+        // 1. Fetch Accounts/Splits relevant to the current user's UID
         const accountsSnapshot = await db.collection('accounts')
-                                          .where('organizationId', '==', ORGANIZATION_ID) 
+                                          // Scope accounts by the creator's UID
+                                          .where('creatorId', '==', currentUser.uid) 
                                           .get();
         globalAccounts = accountsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // 2. Fetch Pending Requests
+        // 2. Fetch Pending Requests (Requests submitted TO this user, if applicable)
         const requestsSnapshot = await db.collection('pending_requests')
-                                         .where('organizationId', '==', ORGANIZATION_ID) 
+                                         // For now, requests are scoped to the Super Admin's UID for review.
+                                         // If we assume a multi-account system where a user approves their own, 
+                                         // this query needs to target requests where 'approverId' == currentUser.uid 
+                                         // For now, let's keep it simple: only the primary admin handles all. 
+                                         // To isolate budgets completely, we'll keep this one simple:
+                                         .where('creatorId', '==', currentUser.uid) 
                                          .get();
         pendingRequests = requestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
@@ -193,6 +202,27 @@ async function initializeAppData() {
         console.error("Error loading initial data from Firestore:", error);
         alert("Error loading application data. Check console for details.");
     }
+}
+
+
+// In handleFinalizeBudget(), ensure you save the creatorId
+// ... (inside the loop where accountsToAdd is built) ...
+            accountsToAdd.push({
+                // ... existing fields ...
+                // ADD THIS FIELD to link the budget to the user
+                creatorId: currentUser.uid, 
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+// ...
+
+// In handleSubmitRequest(), ensure you save the creatorId (or approverId if implemented)
+// ... (inside the newRequest object) ...
+    const newRequest = {
+        // ... existing fields ...
+        // ADD THIS FIELD
+        creatorId: currentUser.uid, 
+        // ...
+    };    }
 }
 
 // =========================================================================
@@ -550,3 +580,4 @@ finalizeBudgetBtn.addEventListener('click', handleFinalizeBudget);
 
 // --- Spending Request Listener ---
 submitRequestBtn.addEventListener('click', handleSubmitRequest);
+
