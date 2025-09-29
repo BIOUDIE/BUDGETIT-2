@@ -57,7 +57,7 @@ const budgetModal = document.getElementById('budget-modal');
 const modalBudgetTitle = document.getElementById('modal-budget-title');
 const modalTotalAmount = document.getElementById('modal-total-amount');
 const modalOtherDetails = document.getElementById('modal-other-details');
-const allocationTable = document.getElementById('allocation-table');
+const allocationTable = document.getElementById('allocation-table'); // This is the div container
 const addAllocationBtn = document.getElementById('add-allocation-btn');
 const allocatedSumSpan = document.getElementById('allocated-sum');
 const allocationRemainingSpan = document.getElementById('allocation-remaining');
@@ -524,8 +524,43 @@ function updateAllocationSummary() {
     }
 }
 
+/**
+ * Ensures the allocation table structure (<table> and <tbody>) exists
+ * inside the #allocation-table div, and returns the tbody element.
+ * @returns {HTMLElement} The tbody element.
+ */
+function ensureAllocationTableStructure() {
+    let tbody = allocationTable.querySelector('tbody');
+    if (!tbody) {
+        // Clear the container (in case it had something unexpected)
+        allocationTable.innerHTML = ''; 
+
+        // Create the initial structure (Table and TBody)
+        const table = document.createElement('table');
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Account/Split Name</th>
+                    <th>Allocated Amount (₦)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        allocationTable.appendChild(table);
+        tbody = table.querySelector('tbody'); 
+    }
+    return tbody;
+}
+
+
 // Function to add a new allocation row
 function addAllocationRow() {
+    // Rely on the helper to ensure the structure exists
+    const tbody = ensureAllocationTableStructure(); 
+    
+    if (!tbody) return; // Failsafe
+
     const newRow = document.createElement('tr');
     newRow.className = 'allocation-row';
     newRow.innerHTML = `
@@ -533,7 +568,8 @@ function addAllocationRow() {
         <td><input type="number" class="allocation-amount" placeholder="Amount (₦)" min="0" required></td>
         <td><button type="button" class="remove-allocation-btn danger-btn"><i class="fas fa-times"></i></button></td>
     `;
-    allocationTable.querySelector('tbody').appendChild(newRow);
+    // Append the new row to the guaranteed tbody
+    tbody.appendChild(newRow);
 
     // Add event listener to new amount input to recalculate on change
     newRow.querySelector('.allocation-amount').addEventListener('input', updateAllocationSummary);
@@ -552,20 +588,21 @@ function addAllocationRow() {
 // 1. Open Modal
 openNewBudgetModalBtn.addEventListener('click', () => {
     
-    // FIX: Instead of calling .reset() on a potentially missing form, 
-    // reset individual input fields manually.
+    // Reset input fields manually.
     modalBudgetTitle.value = '';
     modalTotalAmount.value = '';
     modalOtherDetails.value = '';
     
-    // Clear dynamic allocation rows 
-    const tbody = allocationTable.querySelector('tbody');
-    tbody.innerHTML = '';
+    // FIX: Ensure the table structure exists and clear the rows.
+    const tbody = ensureAllocationTableStructure(); 
+    if (tbody) {
+        tbody.innerHTML = ''; // Clear dynamic allocation rows
+    }
     
     // Add one starting allocation row
     addAllocationRow();
     
-    // Reset summary display (via the function that handles it)
+    // Reset summary display
     updateAllocationSummary(); 
 
     budgetModal.classList.remove('hidden');
@@ -698,4 +735,3 @@ async function openHistoryModal(accountId, accountName) {
 historyModal.querySelector('.close-btn').addEventListener('click', () => {
     historyModal.classList.add('hidden');
 });
-
