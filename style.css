@@ -135,6 +135,11 @@ body {
     padding-top: 60px; /* Assuming header height is around 50-60px */
 }
 
+/* This FIX hides the logo area that is inside the sidebar on mobile */
+#sidebar .logo-area {
+    display: none;
+}
+
 /* State for when menu is open (toggled by JS) */
 #sidebar.mobile-open {
     transform: translateX(0);
@@ -375,14 +380,14 @@ ul li {
 }
 
 /* ================================================= */
-/* 5. MEDIA QUERY: DESKTOP OVERRIDE (> 768px) */
+/* 5. MEDIA QUERY: DESKTOP OVERRIDE (> 769px) */
 /* ================================================= */
 
 @media (min-width: 769px) {
     
     /* 2. MAIN APP LAYOUT (Desktop) */
     #mobile-header {
-        display: none; /* Hide mobile header on desktop */
+        display: none !important; /* FIX: Guarantee hiding the mobile header on desktop */
     }
 
     #app-container {
@@ -401,7 +406,9 @@ ul li {
         padding-top: 20px;
     }
     
-    .logo-area {
+    /* FIX: Show the logo area that belongs to the sidebar on desktop */
+    #sidebar .logo-area {
+        display: flex; 
         margin-bottom: 30px;
     }
 
