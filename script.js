@@ -2,13 +2,13 @@
 // 1. GLOBAL STATE & UI ELEMENT REFERENCES
 // =========================================================================
 
-// Mock User & Role State (This would normally come from an Authentication service)
-let currentUser = null; // Stores the logged-in user object
-let currentRole = null; // 'super_admin' or 'subordinate'
+// State objects: Data is now fetched dynamically from Firestore
+let currentUser = null; // Stores the logged-in Firebase User object
+let currentRole = null; // 'super_admin' or 'subordinate' (Stored in Firestore)
 
-// Budget Data Structure (Will be stored in the backend)
-let globalAccounts = []; // Stores all named accounts/splits (e.g., GTB-House, UBA-Oblee)
-let pendingRequests = []; // Stores spending requests needing admin approval
+// Budget Data Structure (These will hold data fetched from Firestore)
+let globalAccounts = []; 
+let pendingRequests = []; 
 
 // UI Elements (Main Layout)
 const authScreen = document.getElementById('auth-screen');
@@ -59,7 +59,8 @@ function navigateTo(hash) {
     }
 
     navItems.forEach(item => item.classList.remove('active'));
-    document.querySelector(`.nav-item[href="#${hash}"]`).classList.add('active');
+    const activeNav = document.querySelector(`.nav-item[href="#${hash}"]`);
+    if (activeNav) activeNav.classList.add('active');
 
     // Run specific rendering functions after navigation
     if (hash === 'dashboard') renderDashboard();
@@ -70,12 +71,13 @@ function navigateTo(hash) {
 
 /** Updates the UI visibility based on the current user's role. */
 function updateUIVisibility() {
+    // 1. Sidebar Links
     if (currentRole === 'super_admin') {
         adminLinks.classList.remove('hidden');
     } else {
         adminLinks.classList.add('hidden');
     }
-    // Update badge for pending requests
+    // 2. Badge for pending requests
     requestCountBadge.textContent = pendingRequests.length.toString();
 }
 
@@ -96,77 +98,111 @@ function toggleAppView(isLoggedIn) {
 }
 
 // =========================================================================
-// 3. MOCK AUTHENTICATION (Replace with real backend calls)
+// 3. FIREBASE AUTHENTICATION
 // =========================================================================
 
-function handleLogin() {
-    // In a real app: Call Firebase/Supabase login function
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-
-    if (email === 'admin@budgetit.com' && password === '123456') {
-        currentUser = { id: 'u1', email: email, name: 'Super Admin' };
-        currentRole = 'super_admin';
-        initializeAppData(); // Load data after login
-        updateUIVisibility();
-        toggleAppView(true);
-    } else if (email === 'user@budgetit.com' && password === '123456') {
-        currentUser = { id: 'u2', email: email, name: 'Regular User' };
-        currentRole = 'subordinate';
-        initializeAppData(); // Load data after login
-        updateUIVisibility();
-        toggleAppView(true);
-    } else {
-        alert("Login failed. Use admin@budgetit.com or user@budgetit.com (password: 123456)");
+/** Helper to fetch the custom role (stored in a 'users' collection) */
+async function fetchUserRole(uid) {
+    try {
+        const userDoc = await db.collection('users').doc(uid).get();
+        if (userDoc.exists) {
+            currentRole = userDoc.data().role; // e.g., 'super_admin' or 'subordinate'
+        } else {
+            // Default role if not found (e.g., if a user signs up for the first time)
+            currentRole = 'subordinate'; 
+        }
+    } catch (error) {
+        console.error("Error fetching user role:", error);
+        currentRole = 'subordinate'; // Safety fallback
     }
 }
 
+/** Handles user login using Firebase Email/Password. */
+function handleLogin() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+
+    auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+            // Success: onAuthStateChanged handles UI update
+        })
+        .catch((error) => {
+            alert(`Login Failed: ${error.message}`);
+        });
+}
+
+/** Handles user sign up using Firebase Email/Password. */
+function handleSignUp() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    
+    if (password.length < 6) {
+        alert("Password must be at least 6 characters long.");
+        return;
+    }
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            const user = userCredential.user;
+            // 1. Create a record in the 'users' collection with a default role
+            return db.collection('users').doc(user.uid).set({
+                email: user.email,
+                role: 'subordinate', // Default role for new signups
+                organizationId: ORGANIZATION_ID,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        })
+        .then(() => {
+            alert("Account created successfully! You are now logged in.");
+            // Success: onAuthStateChanged handles UI update
+        })
+        .catch((error) => {
+            alert(`Sign Up Failed: ${error.message}`);
+        });
+}
+
+/** Handles user logout. */
 function handleLogout() {
-    // In a real app: Call Firebase/Supabase logout function
-    toggleAppView(false);
+    auth.signOut(); // onAuthStateChanged handles UI update
 }
 
 
 // =========================================================================
-// 4. DATA MANAGEMENT & INITIALIZATION (Mock Backend)
+// 4. FIREBASE DATA MANAGEMENT (Initialization & Fetching)
 // =========================================================================
 
-/** Loads mock data after successful login. */
-function initializeAppData() {
-    // Mock Data for Accounts/Splits
-    globalAccounts = JSON.parse(localStorage.getItem('globalAccounts')) || [
-        { id: 'a1', name: 'GTB (House)', allocated: 150000, spent: 25000, creatorId: 'u1' },
-        { id: 'a2', name: 'UBA (Oblee)', allocated: 50000, spent: 10000, creatorId: 'u1' },
-        { id: 'a3', name: 'Providus (Subscriptions)', allocated: 15000, spent: 5000, creatorId: 'u1' }
-    ];
+/** Loads data (Accounts and Requests) from Firestore after login. */
+async function initializeAppData() {
+    try {
+        // 1. Fetch Accounts/Splits relevant to the organization
+        const accountsSnapshot = await db.collection('accounts')
+                                          .where('organizationId', '==', ORGANIZATION_ID) 
+                                          .get();
+        globalAccounts = accountsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    // Mock Data for Pending Requests
-    pendingRequests = JSON.parse(localStorage.getItem('pendingRequests')) || [
-        { id: 'r1', accountId: 'a1', accountName: 'GTB (House)', amount: 1500, description: 'New light bulb', submittedBy: 'Regular User', date: new Date().toISOString().split('T')[0] }
-    ];
+        // 2. Fetch Pending Requests
+        const requestsSnapshot = await db.collection('pending_requests')
+                                         .where('organizationId', '==', ORGANIZATION_ID) 
+                                         .get();
+        pendingRequests = requestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Initial UI updates after data is loaded
+        updateUIVisibility();
+        renderDashboard();
+    } catch (error) {
+        console.error("Error loading initial data from Firestore:", error);
+        alert("Error loading application data. Check console for details.");
+    }
 }
-
-/** Saves data back to local storage (for persistent mock data). */
-function saveMockData() {
-    localStorage.setItem('globalAccounts', JSON.stringify(globalAccounts));
-    localStorage.setItem('pendingRequests', JSON.stringify(pendingRequests));
-    updateUIVisibility();
-}
-
 
 // =========================================================================
-// 5. BUDGET SPLITTING & ACCOUNT MANAGEMENT LOGIC
+// 5. BUDGET SPLITTING & ACCOUNT MANAGEMENT LOGIC (Firestore Write)
 // =========================================================================
 
 /** Renders the current allocation rows inside the modal. */
 function renderAllocationRows() {
-    // Clear the table before rendering
     allocationTable.innerHTML = '';
-    
-    // Add one initial row for the user to start
-    addAllocationRow();
-    
-    // Ensure calculation is run immediately
+    addAllocationRow(); // Start with one initial row
     updateAllocationSummary();
 }
 
@@ -180,13 +216,11 @@ function addAllocationRow(name = '', amount = '') {
         <button class="remove-account-btn"><i class="fas fa-times-circle"></i></button>
     `;
     
-    // Event listener for removing the row
+    // Event listeners
     row.querySelector('.remove-account-btn').addEventListener('click', (e) => {
         row.remove();
-        updateAllocationSummary(); // Recalculate after removal
+        updateAllocationSummary();
     });
-
-    // Event listener for changes to update summary dynamically
     row.querySelector('.account-amount').addEventListener('input', updateAllocationSummary);
     
     allocationTable.appendChild(row);
@@ -207,17 +241,18 @@ function updateAllocationSummary() {
     allocationRemainingDisplay.textContent = remainingToAllocate.toFixed(2);
     
     // Simple UI feedback for over/under-allocation
+    const displayElement = allocationRemainingDisplay;
     if (remainingToAllocate < 0) {
-        allocationRemainingDisplay.style.color = 'red';
+        displayElement.style.color = 'red';
     } else if (remainingToAllocate > 0) {
-        allocationRemainingDisplay.style.color = 'darkorange';
+        displayElement.style.color = 'darkorange';
     } else {
-        allocationRemainingDisplay.style.color = 'green';
+        displayElement.style.color = 'green';
     }
 }
 
-/** Finalizes the new budget and saves the splits to globalAccounts. */
-function handleFinalizeBudget() {
+/** Finalizes the new budget and saves the splits to Firestore. */
+async function handleFinalizeBudget() {
     const totalBudget = parseFloat(modalTotalAmountInput.value) || 0;
     const budgetTitle = document.getElementById('modal-budget-title').value.trim();
     
@@ -235,29 +270,41 @@ function handleFinalizeBudget() {
         
         if (name && amount > 0) {
             accountsToAdd.push({
-                id: `a${Date.now() + Math.random().toFixed(0)}`, // Unique ID
                 name: name,
                 allocated: amount,
-                spent: 0, // Start with zero spent
-                creatorId: currentUser.id
+                spent: 0,
+                budgetTitle: budgetTitle,
+                organizationId: ORGANIZATION_ID,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             allocatedSum += amount;
         }
     });
     
     if (allocatedSum !== totalBudget) {
-        if (!confirm(`Warning: Your allocated sum (₦${allocatedSum.toFixed(2)}) does not match the total budget (₦${totalBudget.toFixed(2)}). Do you want to save anyway?`)) {
+        if (!confirm(`Warning: Your allocated sum (₦${allocatedSum.toFixed(2)}) does not match the total budget (₦${totalBudget.toFixed(2)}). Do you want to save the ${accountsToAdd.length} accounts anyway?`)) {
             return;
         }
     }
-
-    // Add new accounts to the global list
-    globalAccounts.push(...accountsToAdd);
-    saveMockData();
-    alert(`Budget "${budgetTitle}" created with ${accountsToAdd.length} accounts.`);
     
-    budgetModal.classList.add('hidden');
-    renderAccountManagement(); // Update the accounts list view
+    try {
+        // Use a Firestore Batch write for efficiency
+        const batch = db.batch();
+        accountsToAdd.forEach(account => {
+            const newAccountRef = db.collection('accounts').doc();
+            batch.set(newAccountRef, account);
+        });
+
+        await batch.commit();
+        alert(`Budget "${budgetTitle}" created with ${accountsToAdd.length} accounts and saved to Firestore.`);
+        
+        // Re-initialize data and close modal
+        await initializeAppData(); 
+        budgetModal.classList.add('hidden');
+    } catch (error) {
+        console.error("Error finalizing budget and writing to Firestore:", error);
+        alert("Failed to save budget. See console.");
+    }
 }
 
 // =========================================================================
@@ -269,7 +316,6 @@ function renderDashboard() {
     let totalBudget = 0;
     let totalSpent = 0;
     
-    // Calculate totals across all accounts
     globalAccounts.forEach(account => {
         totalBudget += account.allocated;
         totalSpent += account.spent;
@@ -302,7 +348,6 @@ function renderDashboard() {
 
 /** Renders the list of all saved budgets/accounts for the Admin view. */
 function renderAccountManagement() {
-    // This view displays the list of all accounts defined
     const list = document.getElementById('saved-budgets-list');
     list.innerHTML = '';
     
@@ -310,7 +355,7 @@ function renderAccountManagement() {
         const remaining = account.allocated - account.spent;
         const li = document.createElement('li');
         li.innerHTML = `
-            <span>${account.name} (ID: ${account.id})</span>
+            <span><strong>${account.name}</strong> (${account.budgetTitle || 'Unfiled'})</span>
             <span>Budget: ₦${account.allocated.toFixed(2)} | Remaining: ₦${remaining.toFixed(2)}</span>
         `;
         list.appendChild(li);
@@ -318,7 +363,7 @@ function renderAccountManagement() {
 }
 
 // =========================================================================
-// 7. SPENDING REQUEST & APPROVAL LOGIC
+// 7. SPENDING REQUEST & APPROVAL LOGIC (Firestore Read/Write)
 // =========================================================================
 
 /** Populates the dropdown menu for spending requests. */
@@ -332,42 +377,50 @@ function populateAccountSelect() {
     });
 }
 
-/** Handles a subordinate submitting a spending request. */
-function handleSubmitRequest() {
+/** Handles a subordinate submitting a spending request to Firestore. */
+async function handleSubmitRequest() {
     const amount = parseFloat(document.getElementById('spend-amount').value);
     const accountId = spendTargetAccountSelect.value;
     const description = document.getElementById('spend-description').value.trim();
 
-    if (!amount || amount <= 0 || !accountId || !description) {
-        alert("Please fill out all fields with valid data.");
+    if (!amount || amount <= 0 || !accountId || !description || !currentUser) {
+        alert("Please fill out all fields with valid data and ensure you are logged in.");
         return;
     }
     
     const targetAccount = globalAccounts.find(a => a.id === accountId);
+    if (!targetAccount) return alert("Target account not found.");
 
     const newRequest = {
-        id: `r${Date.now()}`,
         accountId: accountId,
-        accountName: targetAccount ? targetAccount.name : 'Unknown',
+        accountName: targetAccount.name,
         amount: amount,
         description: description,
-        submittedBy: currentUser.name,
-        date: new Date().toISOString().split('T')[0]
+        submittedBy: currentUser.email,
+        submittedById: currentUser.uid,
+        organizationId: ORGANIZATION_ID,
+        date: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    pendingRequests.push(newRequest);
-    saveMockData();
-    alert("Spending request submitted for approval!");
-    
-    // Clear form
-    document.getElementById('spend-amount').value = '';
-    document.getElementById('spend-description').value = '';
-    spendTargetAccountSelect.value = '';
+    try {
+        await db.collection('pending_requests').add(newRequest);
+        alert("Spending request submitted for approval!");
+        
+        // Clear form
+        document.getElementById('spend-amount').value = '';
+        document.getElementById('spend-description').value = '';
+        spendTargetAccountSelect.value = '';
+        
+        // Re-fetch requests (to update badge for admin if they're logged in)
+        await initializeAppData();
+    } catch (error) {
+        console.error("Error submitting request:", error);
+        alert("Failed to submit request.");
+    }
 }
 
 /** Renders the list of pending requests for the Super Admin. */
 function renderPendingRequests() {
-    // Only proceed if admin
     if (currentRole !== 'super_admin') return;
 
     pendingRequestsList.innerHTML = '';
@@ -385,8 +438,8 @@ function renderPendingRequests() {
                 <p style="font-size:0.9em; margin: 5px 0 0;">${request.description} - By: ${request.submittedBy}</p>
             </div>
             <div>
-                <button class="approve-btn" data-id="${request.id}"><i class="fas fa-check"></i> Approve</button>
-                <button class="reject-btn" data-id="${request.id}"><i class="fas fa-times"></i> Reject</button>
+                <button class="approve-btn primary-btn" data-id="${request.id}"><i class="fas fa-check"></i> Approve</button>
+                <button class="reject-btn secondary-btn" data-id="${request.id}"><i class="fas fa-times"></i> Reject</button>
             </div>
         `;
         pendingRequestsList.appendChild(item);
@@ -402,31 +455,47 @@ function renderPendingRequests() {
     });
 }
 
-/** Handles the Super Admin approving or rejecting a request. */
-function handleApproval(requestId, isApproved) {
-    const index = pendingRequests.findIndex(r => r.id === requestId);
-    if (index === -1) return;
+/** Handles the Super Admin approving or rejecting a request using a Firestore Transaction. */
+async function handleApproval(requestId, isApproved) {
+    const request = pendingRequests.find(r => r.id === requestId);
+    if (!request) return;
     
-    const request = pendingRequests[index];
+    const accountRef = db.collection('accounts').doc(request.accountId);
+    const requestRef = db.collection('pending_requests').doc(requestId);
     
-    if (isApproved) {
-        // 1. Find the target account and update its spent total
-        const targetAccount = globalAccounts.find(a => a.id === request.accountId);
-        if (targetAccount) {
-            targetAccount.spent += request.amount;
-            alert(`Approved! ₦${request.amount.toFixed(2)} added to ${targetAccount.name}'s spent total.`);
-        }
-    } else {
-        alert(`Rejected! Request ₦${request.amount.toFixed(2)} from ${request.submittedBy} denied.`);
-    }
+    // Use a transaction for atomic update (crucial for financial data)
+    try {
+        await db.runTransaction(async (transaction) => {
+            if (isApproved) {
+                // 1. Get the current account data within the transaction
+                const accountDoc = await transaction.get(accountRef);
+                if (!accountDoc.exists) {
+                    throw "Account not found!";
+                }
+                
+                // 2. Update the spent total
+                const newSpent = accountDoc.data().spent + request.amount;
+                transaction.update(accountRef, { spent: newSpent });
+                
+                // 3. Delete the request
+                transaction.delete(requestRef);
+                alert(`Approved! ₦${request.amount.toFixed(2)} added to ${request.accountName}.`);
+            } else {
+                // Only delete the request if rejected
+                transaction.delete(requestRef);
+                alert(`Rejected! Request ₦${request.amount.toFixed(2)} from ${request.submittedBy} denied.`);
+            }
+        });
 
-    // 2. Remove the request from the pending list
-    pendingRequests.splice(index, 1);
-    
-    // 3. Save data and re-render the view
-    saveMockData();
-    renderPendingRequests();
-    renderDashboard(); // Update dashboard totals
+        // Update UI after successful transaction
+        await initializeAppData();
+        renderPendingRequests(); 
+        renderDashboard(); 
+
+    } catch (error) {
+        console.error("Transaction failed:", error);
+        alert(`Approval failed! Check your budget limits or network. ${error}`);
+    }
 }
 
 
@@ -434,21 +503,32 @@ function handleApproval(requestId, isApproved) {
 // 8. INITIALIZATION & EVENT LISTENERS
 // =========================================================================
 
-// Initial check (starts on the login screen)
-window.onload = () => {
-    toggleAppView(false); 
-};
+// --- Firebase Auth State Listener ---
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        currentUser = user;
+        await fetchUserRole(user.uid);
+        await initializeAppData(); 
+        
+        updateUIVisibility();
+        toggleAppView(true);
+    } else {
+        currentUser = null;
+        currentRole = null;
+        toggleAppView(false); 
+    }
+});
 
 // --- Authentication Listeners ---
 loginBtn.addEventListener('click', handleLogin);
-signupBtn.addEventListener('click', () => alert("Sign up functionality not implemented yet. Please log in as admin or user."));
+signupBtn.addEventListener('click', handleSignUp);
 logoutBtn.addEventListener('click', handleLogout);
 
 // --- Navigation Listeners ---
 navItems.forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
-        const hash = e.currentTarget.getAttribute('href').substring(1); // Removes the '#'
+        const hash = e.currentTarget.getAttribute('href').substring(1); 
         navigateTo(hash);
     });
 });
