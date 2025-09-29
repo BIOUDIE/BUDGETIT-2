@@ -439,18 +439,20 @@ async function logPersonalSpending() {
     const transactionDate = new Date(dateValue);
 
     try {
-        // 1. Log transaction
-        await db.collection('transactions').add({
-            amount: amount,
-            accountId: accountId,
-            budgetId: budgetId,
-            description: description,
-            userId: auth.currentUser.uid,
-            userName: auth.currentUser.email,
-            date: transactionDate, 
-            status: 'logged', 
-            type: 'spending'
-        });
+        //1. Log transaction
+await db.collection('transactions').add({
+    amount: amount,
+    accountId: accountId,
+    budgetId: budgetId,
+    description: description,
+    userId: auth.currentUser.uid,
+    userName: auth.currentUser.email,
+    date: transactionDate, 
+    status: 'logged', 
+    type: 'spending',
+    // 🔑 CRITICAL FIX: Add organizationId for security rule validation
+    organizationId: auth.currentUser.uid // <-- ADD THIS LINE
+});
 
         // 2. FIX 3.1: Update Account Balance
         const budgetDocRef = db.collection('budgets').doc(budgetId);
@@ -735,3 +737,4 @@ async function openHistoryModal(accountId, accountName) {
 historyModal.querySelector('.close-btn').addEventListener('click', () => {
     historyModal.classList.add('hidden');
 });
+
