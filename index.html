@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>Elektro BudgetIT | Collaborative Finance</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -26,12 +26,17 @@
 
     <div id="app-container" class="hidden">
         
-        <aside id="sidebar">
+        <header id="mobile-header">
             <div class="logo-area">
                 <img src="icon-192.png" alt="Logo" class="sidebar-logo">
                 <h2>BudgetIT</h2>
             </div>
-            
+            <button id="menu-toggle" aria-label="Open Menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </header>
+
+        <aside id="sidebar" class="mobile-hidden"> 
             <nav id="main-nav">
                 <a href="#dashboard" class="nav-item active"><i class="fas fa-chart-line"></i> Dashboard</a>
                 <a href="#accounts" class="nav-item"><i class="fas fa-wallet"></i> Accounts & Splits</a>
@@ -126,7 +131,7 @@
         </div>
     </div>
 
-   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
