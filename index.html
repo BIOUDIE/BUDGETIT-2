@@ -11,28 +11,29 @@
 <body>
 
     <div id="auth-screen" class="screen active">
-        <div class="auth-card">
-            <h2>Welcome to Elektro BudgetIT</h2>
-            <p>Please log in or sign up to continue.</p>
+    <div class="auth-card">
+        <img src="icon-192.png" alt="BudgetIT Logo" class="auth-logo"> 
+        <h2>Welcome to Elektro BudgetIT</h2>
+        <p>Please log in or sign up to continue.</p>
 
-            <div class="account-type-selection">
-                <label>
-                    <input type="radio" name="account-type" value="personal" checked> Personal Account
-                </label>
-                <label>
-                    <input type="radio" name="account-type" value="joint"> Joint/Corporate Account
-                </label>
-            </div>
-            <hr style="border-color: #eee; margin: 15px 0;">
-            <input type="email" id="auth-email" placeholder="Email">
-            <input type="password" id="auth-password" placeholder="Password">
-            <button id="login-btn" class="primary-btn">Log In</button>
-            <button id="signup-btn" class="secondary-btn">Sign Up</button>
-            <p style="margin-top: 15px; font-size: 0.9em;">
-                *Note: Password must be 6 characters minimum.
-            </p>
+        <div class="account-type-selection">
+            <label>
+                <input type="radio" name="account-type" value="personal" checked> Personal Account
+            </label>
+            <label>
+                <input type="radio" name="account-type" value="joint"> Joint/Corporate Account
+            </label>
         </div>
+        <hr style="border-color: #eee; margin: 15px 0;">
+        <input type="email" id="auth-email" placeholder="Email">
+        <input type="password" id="auth-password" placeholder="Password">
+        <button id="login-btn" class="primary-btn">Log In</button>
+        <button id="signup-btn" class="secondary-btn">Sign Up</button>
+        <p style="margin-top: 15px; font-size: 0.9em;">
+            *Note: Password must be 6 characters minimum.
+        </p>
     </div>
+</div>
 
     <div id="app-container" class="hidden">
         
