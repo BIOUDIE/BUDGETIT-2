@@ -45,6 +45,16 @@ body {
     text-align: center;
 }
 
+/* NEW: Style for the logo on the auth page */
+.auth-logo {
+    width: 64px; /* Adjust size as needed */
+    height: 64px;
+    margin-bottom: 20px;
+    display: block; /* Ensures it takes up full width for centering */
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .auth-card h2 {
     color: var(--color-primary);
     margin-bottom: 20px;
@@ -56,7 +66,7 @@ body {
     margin-bottom: 15px;
 }
 
-/* NEW: Account Type Selection Styling */
+/* Account Type Selection Styling */
 .account-type-selection {
     display: flex;
     justify-content: space-around;
@@ -75,7 +85,7 @@ body {
     width: auto;
     margin: 0;
 }
-/* END NEW */
+/* End Account Type Selection Styling */
 
 
 .primary-btn, .secondary-btn {
@@ -100,7 +110,6 @@ body {
 
 .primary-btn:hover { background-color: #314b80; }
 .secondary-btn:hover { background-color: #008080; }
-
 
 /* -------------------------------------- */
 /* 2. MAIN APP LAYOUT (MOBILE-FIRST) */
